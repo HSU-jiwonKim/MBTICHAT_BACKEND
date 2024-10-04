@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
         required: [true, "User must type name"], // 필수 입력 사항이며, 오류 메시지 설정
         unique: true, // 유일한 값이어야 함
     },
-    token: { // 유저의 연결 정보를 저장하는 필드
+    token: { // 유저의 연결 정보(id)를 저장하는 필드
         type: String, // 데이터 타입: 문자열
     },
     online: { // 유저의 온라인 상태를 나타내는 필드
