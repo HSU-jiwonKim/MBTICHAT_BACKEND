@@ -12,6 +12,6 @@ const io = new Server(httpServer, {
 
 require("./utils/io")(io); // require로 함수를 리턴 받아서 매개변수 io를 넘겨줌. 
 
-httpServer.listen(process.env.PORT, () => { // .env 파일의 포트를 기준으로 http 서버 틀어놓기. 만약 연결이 되면 log 뜸.
-    console.log("server listening on port", process.env.PORT);
+httpServer.listen(5001, () => { // 포트를 5001로 고정
+    console.log("server listening on port", 5001); // 5001 포트에 연결됐음을 log로 확인
 });
