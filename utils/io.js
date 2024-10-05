@@ -13,7 +13,7 @@ module.exports = function(io) {
                 const user = await userController.saveUser(userName, socket.id);
                 cb({ ok: true, data: user }); // 수정된 부분
                 const welcomeMessage = { // 유저가 처음 들어왔을떄
-                    chat: `${user.name} has joined the room`, // 템플릿 리터럴 수정
+                    chat: `${user.name} 님이 들어왔습니다.`, // 템플릿 리터럴 수정
                     user: { id: null, name: "system" },
                 };
                 io.emit("message",welcomeMessage); // 모두에게 welcomeMessage 보내기
