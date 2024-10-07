@@ -36,17 +36,19 @@ module.exports = function(io) {
             }
         });
 
+        // 연결 오류 로그 추가
+        socket.on("error", (error) => {
+            console.error("Socket error:", error);
+        });
+
         socket.on("disconnect", () => {
             connectedUsers--; // 사용자가 연결 해제될 때 사용자 수 감소
             io.emit("userCount", connectedUsers); // 현재 사용자 수를 모든 클라이언트에 전송
             console.log("client disconnected", socket.id);
         });
-
-        socket.on("error", (error) => {
-            console.error("Socket error:", error);
-        });
     });
 
+    // 서버에 연결 실패 시 오류 처리
     io.on("error", (error) => {
         console.error("Server error:", error);
     });

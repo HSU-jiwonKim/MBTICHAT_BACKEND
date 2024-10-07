@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// 데이터베이스와 스키마 파일들을 연결하는 파일.
+>>>>>>> 09e359d1f1c9ecf775c1698d5a1c9c4e99413085
 const express = require("express");
 const mongoose = require("mongoose"); // 데이터베이스를 연결할수 있도록 도와주는 mongoose 불러오기.
 require('dotenv').config(); // dotenv 불러오기. .config() 메소드는 환경 변수를 process.env에 추가 해주는 역할을 함.
