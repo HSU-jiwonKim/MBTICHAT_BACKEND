@@ -1,3 +1,5 @@
+// 사용자 스키마 파일
+
 // Mongoose 라이브러리 가져오기
 const mongoose = require("mongoose");
 
@@ -14,10 +16,6 @@ const userSchema = new mongoose.Schema({
     online: { // 유저의 온라인 상태를 나타내는 필드
         type: Boolean, // 데이터 타입: 불리언
         default: false, // 기본값: false (오프라인)
-    },
-    profileImage: { // 유저의 프로필 이미지 URL을 저장하는 필드
-        type: String, // 데이터 타입: 문자열
-        default: "", // 기본값: 빈 문자열
     },
 });
 
