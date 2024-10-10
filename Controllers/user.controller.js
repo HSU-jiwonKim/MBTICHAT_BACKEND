@@ -45,4 +45,22 @@ userController.checkUser = async (sid) => {
     }
 };
 
+// 유저의 프로필 이미지를 업데이트하는 함수
+userController.updateProfileImage = async (userId, imageUrl) => {
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        user.profileImage = imageUrl; // 프로필 이미지 URL 업데이트
+        await user.save(); // 유저 정보 저장
+
+        return user; // 업데이트된 유저 정보 반환
+    } catch (error) {
+        console.error("Error updating profile image:", error);
+        throw new Error("Error updating profile image");
+    }
+};
+
 module.exports = userController;
