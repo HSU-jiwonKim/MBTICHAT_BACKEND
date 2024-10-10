@@ -36,9 +36,9 @@ module.exports = function(io) {
 
                 cb({ ok: true, data: user });
 
-                // 날짜 메시지 전송
+                // 입장 시 당일 날짜 메시지 전송
                 const today = new Date();
-                const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', locale: 'ko-KR' };
+                const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
                 const dateMessage = {
                     chat: `📅${today.toLocaleDateString('ko-KR', options)} >`,
                     user: { id: null, name: "system" },
@@ -105,19 +105,6 @@ module.exports = function(io) {
             console.log("client disconnected", socket.id);
         });
     });
-
-    // 매일 00시 00분에 날짜 메시지 보내기
-    setInterval(() => {
-        const now = new Date();
-        if (now.getHours() === 0 && now.getMinutes() === 0) {
-            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', locale: 'ko-KR' };
-            const dateMessage = {
-                chat: `${now.toLocaleDateString('ko-KR', options)}입니다.`,
-                user: { id: null, name: "system" },
-            };
-            io.sockets.emit("message", dateMessage);
-        }
-    }, 60000); // 1분마다 체크
 
     io.on("error", (error) => {
         console.error("Server error:", error);
