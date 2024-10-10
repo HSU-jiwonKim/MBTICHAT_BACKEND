@@ -6,6 +6,12 @@ module.exports = function(io) {
     const users = {}; // 사용자 정보를 저장할 객체 추가
 
     io.on("connection", async (socket) => {
+        // 이미 연결된 사용자가 있는 경우 처리
+        if (users[socket.id]) {
+            console.log("기존 사용자 재연결:", socket.id);
+            return; // 기존 사용자일 경우 새로운 연결을 만들지 않음
+        }
+
         connectedUsers++;
         io.emit("userCount", connectedUsers);
         console.log("client is connected", socket.id);
@@ -17,6 +23,13 @@ module.exports = function(io) {
                 return;
             }
             try {
+                // 사용자 중복 체크
+                const existingUser = Object.values(users).find(user => user.name === userName);
+                if (existingUser) {
+                    cb({ ok: false, error: "이미 사용 중인 닉네임입니다." });
+                    return;
+                }
+                
                 const user = await userController.saveUser(userName, socket.id);
                 users[socket.id] = user; // 소켓 ID를 키로 사용자 정보를 저장
                 cb({ ok: true, data: user });
