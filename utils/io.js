@@ -36,11 +36,17 @@ module.exports = function(io) {
 
                 cb({ ok: true, data: user });
 
-                // 입장 시 당일 날짜 메시지 전송
+                // 한국 시간 기준으로 날짜 메시지 전송
                 const today = new Date();
-                const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+                const options = { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric', 
+                    weekday: 'long', 
+                    timeZone: 'Asia/Seoul'  // 한국 시간대 설정
+                };
                 const dateMessage = {
-                    chat: `📅${today.toLocaleDateString('ko-KR', options)} >`,
+                    chat: `📅${new Intl.DateTimeFormat('ko-KR', options).format(today)} >`,
                     user: { id: null, name: "system" },
                 };
                 socket.emit("message", dateMessage); // 해당 사용자에게만 메시지 전송
