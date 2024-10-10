@@ -21,7 +21,7 @@ module.exports = function(io) {
                 const today = new Date();
                 const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', locale: 'ko-KR' };
                 const dateMessage = {
-                    chat: `${today.toLocaleDateString('ko-KR', options)}`,
+                    chat: `📅${today.toLocaleDateString('ko-KR', options)} >`,
                     user: { id: null, name: "system" },
                 };
                 socket.emit("message", dateMessage); // 해당 사용자에게만 메시지 전송
