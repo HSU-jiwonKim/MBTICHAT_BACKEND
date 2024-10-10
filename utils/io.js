@@ -12,6 +12,10 @@ module.exports = function(io) {
 
         socket.on("login", async (userName, cb) => {
             console.log("User name received:", userName);
+            if (typeof cb !== "function") {
+                console.error("Callback is not a function");
+                return;
+            }
             try {
                 const user = await userController.saveUser(userName, socket.id);
                 users[socket.id] = user; // 소켓 ID를 키로 사용자 정보를 저장
@@ -37,6 +41,11 @@ module.exports = function(io) {
         });
 
         socket.on("sendMessage", async (message, cb) => {
+            console.log("Message to send:", message);
+            if (typeof cb !== "function") {
+                console.error("Callback is not a function");
+                return;
+            }
             try {
                 const user = await userController.checkUser(socket.id);
                 const newMessage = await chatController.saveChat(message, user);
@@ -48,6 +57,11 @@ module.exports = function(io) {
         });
 
         socket.on("userLeave", async (userName, cb) => {
+            console.log("User leaving:", userName);
+            if (typeof cb !== "function") {
+                console.error("Callback is not a function");
+                return;
+            }
             connectedUsers--;
             const leaveMessage = {
                 chat: `${userName} 님이 나갔습니다.`,
