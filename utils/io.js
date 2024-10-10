@@ -1,9 +1,6 @@
-const chatController = require("../Controllers/chat.controller.js");
-const userController = require("../Controllers/user.controller.js");
-
 module.exports = function(io) {
     let connectedUsers = 0;
-    const users = {}; // 사용자 정보를 저장할 객체 추가
+    const users = {}; // 사용자 정보를 저장할 객체
 
     io.on("connection", async (socket) => {
         // 이미 연결된 사용자가 있는 경우 처리
@@ -12,6 +9,7 @@ module.exports = function(io) {
             return; // 기존 사용자일 경우 새로운 연결을 만들지 않음
         }
 
+        // 새로운 사용자가 연결되면 사용자 수 증가
         connectedUsers++;
         io.emit("userCount", connectedUsers);
         console.log("client is connected", socket.id);
@@ -88,7 +86,7 @@ module.exports = function(io) {
         socket.on("disconnect", () => {
             const user = users[socket.id]; // 연결이 끊어진 사용자를 찾음
             if (user) {
-                connectedUsers--;
+                connectedUsers--; // 연결이 끊어질 때 사용자 수 감소
                 const leaveMessage = {
                     chat: `${user.name} 님이 나갔습니다.`,
                     user: { id: null, name: "system" },
