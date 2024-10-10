@@ -16,6 +16,16 @@ module.exports = function(io) {
                 const user = await userController.saveUser(userName, socket.id);
                 users[socket.id] = user; // 소켓 ID를 키로 사용자 정보를 저장
                 cb({ ok: true, data: user });
+                
+                // 사용자에게 그날의 날짜 메시지 보내기
+                const today = new Date();
+                const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', locale: 'ko-KR' };
+                const dateMessage = {
+                    chat: `${today.toLocaleDateString('ko-KR', options)}입니다.`,
+                    user: { id: null, name: "system" },
+                };
+                socket.emit("message", dateMessage); // 해당 사용자에게만 메시지 전송
+
                 const welcomeMessage = {
                     chat: `${user.name} 님이 들어왔습니다.`,
                     user: { id: null, name: "system" },
@@ -63,6 +73,20 @@ module.exports = function(io) {
             console.log("client disconnected", socket.id);
         });
     });
+
+    // 매일 00시 00분에 날짜 메시지 보내기
+    setInterval(() => {
+        const now = new Date();
+        if (now.getHours() === 0 && now.getMinutes() === 0) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', locale: 'ko-KR' };
+            const dateMessage = {
+                chat: `${now.toLocaleDateString('ko-KR', options)}입니다.`,
+                user: { id: null, name: "system" },
+            };
+            // 연결된 모든 소켓에게 발송
+            io.sockets.emit("message", dateMessage);
+        }
+    }, 60000); // 1분마다 체크
 
     io.on("error", (error) => {
         console.error("Server error:", error);
