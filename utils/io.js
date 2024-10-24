@@ -14,48 +14,55 @@ module.exports = function(io) {
 
         console.log("client is connected", socket.id);
 
-        socket.on("login", async (userName, cb) => {
+        socket.on("login", async (userName, cb, isFakeUser = false) => {
             console.log("User name received:", userName);
             if (typeof cb !== "function") {
                 console.error("Callback is not a function");
                 return;
             }
             try {
-                // 사용자 중복 체크
-                const existingUser = Object.values(users).find(user => user.name === userName);
+                // 사용자 중복 체크 (페이크 사용자 제외)
+                const existingUser = Object.values(users).find(user => user.name === userName && !user.isFake);
                 if (existingUser) {
                     cb({ ok: false, error: "이미 사용 중인 닉네임입니다." });
                     return;
                 }
 
-                // 사용자 정보를 저장
+                // 사용자 정보를 저장 (페이크 사용자인지 여부 저장)
                 const user = await userController.saveUser(userName, socket.id);
+                user.isFake = isFakeUser; // 페이크 사용자 플래그 설정
                 users[socket.id] = user; // 소켓 ID를 키로 사용자 정보를 저장
-                connectedUsers++; // 새로운 사용자가 연결되었으므로 증가
-                io.emit("userCount", connectedUsers); // 사용자 수 업데이트
+                
+                if (!isFakeUser) {
+                    connectedUsers++; // 페이크 사용자가 아닐 때만 증가
+                    io.emit("userCount", connectedUsers); // 사용자 수 업데이트
+                }
 
                 cb({ ok: true, data: user });
 
-                // 한국 시간 기준으로 날짜 메시지 전송
-                const today = new Date();
-                const options = { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric', 
-                    weekday: 'long', 
-                    timeZone: 'Asia/Seoul'  // 한국 시간대 설정
-                };
-                const dateMessage = {
-                    chat: `📅${new Intl.DateTimeFormat('ko-KR', options).format(today)} >`,
-                    user: { id: null, name: "system" },
-                };
-                socket.emit("message", dateMessage); // 해당 사용자에게만 메시지 전송
+                if (!isFakeUser) { // 페이크 사용자가 아닐 때만 메시지 전송
+                    // 한국 시간 기준으로 날짜 메시지 전송
+                    const today = new Date();
+                    const options = { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric', 
+                        weekday: 'long', 
+                        timeZone: 'Asia/Seoul'  // 한국 시간대 설정
+                    };
+                    const dateMessage = {
+                        chat: `📅${new Intl.DateTimeFormat('ko-KR', options).format(today)} >`,
+                        user: { id: null, name: "system" },
+                    };
+                    socket.emit("message", dateMessage); // 해당 사용자에게만 메시지 전송
 
-                const welcomeMessage = {
-                    chat: `${user.name} 님이 들어왔습니다.`,
-                    user: { id: null, name: "system" },
-                };
-                io.emit("message", welcomeMessage);
+                    const welcomeMessage = {
+                        chat: `${user.name} 님이 들어왔습니다.`,
+                        user: { id: null, name: "system" },
+                    };
+                    io.emit("message", welcomeMessage);
+                }
+
             } catch (error) {
                 cb({ ok: false, error: error.message });
             }
@@ -69,8 +76,10 @@ module.exports = function(io) {
             }
             try {
                 const user = await userController.checkUser(socket.id);
-                const newMessage = await chatController.saveChat(message, user);
-                io.emit("message", newMessage);
+                if (!user.isFake) { // 페이크 사용자가 아니면 메시지 전송
+                    const newMessage = await chatController.saveChat(message, user);
+                    io.emit("message", newMessage);
+                }
                 cb({ ok: true });
             } catch (error) {
                 cb({ ok: false, error: "메시지 전송 실패: " + error.message });
@@ -83,29 +92,34 @@ module.exports = function(io) {
                 console.error("Callback is not a function");
                 return;
             }
-            if (users[socket.id]) { // 사용자 정보가 있을 경우에만 감소
-                connectedUsers--;
-                const leaveMessage = {
-                    chat: `${userName} 님이 나갔습니다.`,
-                    user: { id: null, name: "system" },
-                };
-                io.emit("message", leaveMessage);
-                io.emit("userCount", connectedUsers);
+            if (users[socket.id]) {
+                const user = users[socket.id];
+                if (!user.isFake) {
+                    connectedUsers--; // 페이크 사용자가 아니면 감소
+                    const leaveMessage = {
+                        chat: `${userName} 님이 나갔습니다.`,
+                        user: { id: null, name: "system" },
+                    };
+                    io.emit("message", leaveMessage);
+                    io.emit("userCount", connectedUsers);
+                }
                 delete users[socket.id]; // 사용자 정보 삭제
             }
             cb({ ok: true });
         });
 
         socket.on("disconnect", () => {
-            const user = users[socket.id]; // 연결이 끊어진 사용자를 찾음
+            const user = users[socket.id];
             if (user) {
-                connectedUsers--; // 연결된 사용자 수 감소
-                const leaveMessage = {
-                    chat: `${user.name} 님이 나갔습니다.`,
-                    user: { id: null, name: "system" },
-                };
-                io.emit("message", leaveMessage);
-                io.emit("userCount", connectedUsers);
+                if (!user.isFake) {
+                    connectedUsers--; // 페이크 사용자가 아니면 감소
+                    const leaveMessage = {
+                        chat: `${user.name} 님이 나갔습니다.`,
+                        user: { id: null, name: "system" },
+                    };
+                    io.emit("message", leaveMessage);
+                    io.emit("userCount", connectedUsers);
+                }
                 delete users[socket.id]; // 사용자 정보 삭제
             }
             console.log("client disconnected", socket.id);
