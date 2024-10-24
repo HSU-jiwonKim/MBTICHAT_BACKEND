@@ -1,5 +1,15 @@
+// 환경 변수 설정을 위해 dotenv 패키지를 불러옵니다.
+require('dotenv').config();
+const { Configuration, OpenAIApi } = require('openai');
+
 const chatController = require("../Controllers/chat.controller.js");
 const userController = require("../Controllers/user.controller.js");
+
+// OpenAI API 초기화
+const configuration = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY,
+});
+const openaiClient = new OpenAIApi(configuration);
 
 module.exports = function(io) {
     let connectedUsers = 0;
@@ -69,6 +79,31 @@ module.exports = function(io) {
             }
             try {
                 const user = await userController.checkUser(socket.id);
+
+                // GPT와 상호작용하는 부분
+                if (message.startsWith("!GPT")) {
+                    const prompt = message.replace("!GPT", "").trim();
+                    
+                    const gptResponse = await openaiClient.createChatCompletion({
+                        model: "gpt-3.5-turbo",
+                        messages: [
+                            { role: "system", content: "You are a helpful assistant." },
+                            { role: "user", content: prompt },
+                        ],
+                    });
+
+                    const gptMessage = gptResponse.data.choices[0].message.content;
+                    const botMessage = {
+                        chat: `GPT: ${gptMessage}`,
+                        user: { id: null, name: "GPT" },
+                    };
+
+                    io.emit("message", botMessage);  // GPT 응답 전송
+                    cb({ ok: true });
+                    return;
+                }
+
+                // 일반 메시지 처리
                 const newMessage = await chatController.saveChat(message, user);
                 io.emit("message", newMessage);
                 cb({ ok: true });
