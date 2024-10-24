@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const { Configuration, OpenAIApi } = require("openai"); // OpenAI 패키지 추가
+const { Configuration, OpenAIApi } = require("openai"); // 'require'로 수정
 require('dotenv').config();
 const cors = require("cors");
 
