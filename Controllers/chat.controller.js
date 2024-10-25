@@ -1,5 +1,6 @@
 // 메시지를 저장하는 함수 파일
-const Chat = require("../Models/chat");
+import Chat from "../Models/chat";
+
 const chatController = {};
 
 chatController.saveChat = async (message, user) => {
@@ -16,4 +17,4 @@ chatController.saveChat = async (message, user) => {
     return newMessage;
 };
 
-module.exports = chatController; // chatController 내보냄
+export default chatController; // chatController 내보냄
