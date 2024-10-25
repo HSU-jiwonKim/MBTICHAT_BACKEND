@@ -1,4 +1,5 @@
-const User = require("../Models/user");
+import User from "../Models/user.js"; // require 대신 import 사용
+
 const userController = {};
 
 // 유저 정보를 저장하는 함수
@@ -63,4 +64,4 @@ userController.updateProfileImage = async (userId, imageUrl) => {
     }
 };
 
-module.exports = userController;
+export default userController; // ESM 방식으로 내보내기
