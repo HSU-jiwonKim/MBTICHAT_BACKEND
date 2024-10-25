@@ -1,19 +1,26 @@
-import Chat from '../Models/chat.js'; // import로 Chat 모델 가져오기
+import mongoose from 'mongoose'; // ESM 방식으로 mongoose 가져오기
 
-const chatController = {};
-
-chatController.saveChat = async (message, user) => {
-    const newMessage = new Chat({
-        chat: message,
-        user: {
-            id: user._id,
-            name: user.name
+const chatSchema = new mongoose.Schema({
+    chat: {
+        type: String,
+        required: true
+    },
+    user: {
+        id: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true
         },
-        timestamp: new Date() // 현재 시간을 추가
-    });
+        name: {
+            type: String,
+            required: true
+        }
+    },
+    timestamp: {
+        type: Date,
+        default: Date.now
+    }
+});
 
-    await newMessage.save(); // 메시지 저장
-    return newMessage;
-};
-
-export default chatController; // ESM 방식으로 chatController 내보내기
+// 기본 내보내기로 Chat 모델 생성 및 내보내기
+const Chat = mongoose.model('Chat', chatSchema);
+export default Chat; // 기본 내보내기
