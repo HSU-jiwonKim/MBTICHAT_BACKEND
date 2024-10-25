@@ -1,14 +1,13 @@
 require('dotenv').config();
-const { Configuration, OpenAIApi } = require('openai');
+const { OpenAIApi } = require('openai');
 
 const chatController = require("../Controllers/chat.controller.js");
 const userController = require("../Controllers/user.controller.js");
 
 // OpenAI API 초기화
-const configuration = new Configuration({
+const openaiClient = new OpenAIApi({
     apiKey: process.env.OPENAI_API_KEY,
 });
-const openaiClient = new OpenAIApi(configuration);
 
 module.exports = function(io) {
     let connectedUsers = 0;
