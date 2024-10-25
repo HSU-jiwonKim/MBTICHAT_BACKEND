@@ -1,6 +1,6 @@
 // 환경 변수 설정을 위해 dotenv 패키지를 불러옵니다.
 import { Server } from 'socket.io'; // socket.io를 불러옵니다.
-import Gemini from 'gemini-api'; // Gemini API 클라이언트를 임포트합니다.
+import { Gemini } from 'gemini-api'; // Gemini API 클라이언트를 올바르게 임포트합니다.
 import dotenv from 'dotenv'; // dotenv 패키지를 불러옵니다.
 import chatController from '../Controllers/chat.controller.js'; // require 대신 import 사용
 import userController from '../Controllers/user.controller.js'; // require 대신 import 사용
