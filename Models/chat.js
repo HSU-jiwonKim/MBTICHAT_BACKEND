@@ -1,4 +1,4 @@
-const Chat = require("../Models/chat"); // require로 Chat 모델 가져오기
+import Chat from '../Models/chat.js'; // import로 Chat 모델 가져오기
 
 const chatController = {};
 
@@ -16,4 +16,4 @@ chatController.saveChat = async (message, user) => {
     return newMessage;
 };
 
-module.exports = chatController; // chatController 내보내기
+export default chatController; // ESM 방식으로 chatController 내보내기

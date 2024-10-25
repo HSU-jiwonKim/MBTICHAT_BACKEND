@@ -1,7 +1,6 @@
 // 사용자 스키마 파일
 
-// Mongoose 라이브러리 가져오기
-const mongoose = require("mongoose");
+import mongoose from "mongoose"; // Mongoose 라이브러리 가져오기
 
 // 사용자 스키마 정의하기
 const userSchema = new mongoose.Schema({
@@ -20,4 +19,4 @@ const userSchema = new mongoose.Schema({
 });
 
 // Mongoose 모델 생성 및 내보내기
-module.exports = mongoose.model("User", userSchema);
+export default mongoose.model("User", userSchema); // ESM 방식으로 내보내기
