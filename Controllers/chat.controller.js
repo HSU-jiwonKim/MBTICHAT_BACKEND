@@ -1,5 +1,5 @@
-// 메시지를 저장하는 함수 파일
-import Chat from "../Models/chat.js";
+// chat.controller.js
+const Chat = require("../Models/chat"); // require로 Chat 모델 가져오기
 
 const chatController = {};
 
@@ -17,4 +17,4 @@ chatController.saveChat = async (message, user) => {
     return newMessage;
 };
 
-export default chatController; // chatController 내보냄
+module.exports = chatController; // chatController 내보내기
