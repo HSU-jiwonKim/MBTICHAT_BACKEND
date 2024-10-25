@@ -1,5 +1,5 @@
 // 메시지를 저장하는 함수 파일
-import Chat from "../Models/chat";
+import Chat from "../Models/chat.js";
 
 const chatController = {};
 
