@@ -2,8 +2,6 @@
 import { Server } from 'socket.io'; // socket.io를 불러옵니다.
 import OpenAI from 'openai'; // OpenAI 클라이언트를 임포트합니다.
 import dotenv from 'dotenv'; // dotenv 패키지를 불러옵니다.
-import chatController from '../Controllers/chat.controller.js'; // 채팅 컨트롤러 임포트
-import userController from '../Controllers/user.controller.js'; // 사용자 컨트롤러 임포트
 
 dotenv.config(); // 환경 변수 로드
 
@@ -11,6 +9,9 @@ dotenv.config(); // 환경 변수 로드
 const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'], // 환경 변수에서 API 키를 로드합니다.
 });
+
+const chatController = require('../Controllers/chat.controller'); // require로 채팅 컨트롤러 가져오기
+const userController = require('../Controllers/user.controller'); // 사용자 컨트롤러 가져오기
 
 export default function (io) {
   let connectedUsers = 0;
