@@ -1,3 +1,4 @@
+// 환경 변수 설정을 위해 dotenv 패키지를 불러옵니다.
 require('dotenv').config();
 const { Configuration, OpenAIApi } = require('openai');
 
@@ -24,7 +25,50 @@ module.exports = function(io) {
         console.log("client is connected", socket.id);
 
         socket.on("login", async (userName, cb) => {
-            // 로그인 처리 코드...
+            console.log("User name received:", userName);
+            if (typeof cb !== "function") {
+                console.error("Callback is not a function");
+                return;
+            }
+            try {
+                // 사용자 중복 체크
+                const existingUser = Object.values(users).find(user => user.name === userName);
+                if (existingUser) {
+                    cb({ ok: false, error: "이미 사용 중인 닉네임입니다." });
+                    return;
+                }
+
+                // 사용자 정보를 저장
+                const user = await userController.saveUser(userName, socket.id);
+                users[socket.id] = user; // 소켓 ID를 키로 사용자 정보를 저장
+                connectedUsers++; // 새로운 사용자가 연결되었으므로 증가
+                io.emit("userCount", connectedUsers); // 사용자 수 업데이트
+
+                cb({ ok: true, data: user });
+
+                // 한국 시간 기준으로 날짜 메시지 전송
+                const today = new Date();
+                const options = { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric', 
+                    weekday: 'long', 
+                    timeZone: 'Asia/Seoul'  // 한국 시간대 설정
+                };
+                const dateMessage = {
+                    chat: `📅${new Intl.DateTimeFormat('ko-KR', options).format(today)} >`,
+                    user: { id: null, name: "system" },
+                };
+                socket.emit("message", dateMessage); // 해당 사용자에게만 메시지 전송
+
+                const welcomeMessage = {
+                    chat: `${user.name} 님이 들어왔습니다.`,
+                    user: { id: null, name: "system" },
+                };
+                io.emit("message", welcomeMessage);
+            } catch (error) {
+                cb({ ok: false, error: error.message });
+            }
         });
 
         socket.on("sendMessage", async (message, cb) => {
@@ -40,31 +84,21 @@ module.exports = function(io) {
                 if (message.startsWith("!GPT")) {
                     const prompt = message.replace("!GPT", "").trim();
                     
-                    const stream = await openaiClient.createChatCompletion({
-                        model: "gpt-4o-mini",
-                        headers: {
-                            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                            'OpenAI-Organization': 'org-Uo8wlzw5XHbaQs8flpbLYk1K',
-                            'OpenAI-Project': '$PROJECT_ID'
-                        },
+                    const gptResponse = await openaiClient.createChatCompletion({
+                        model: "gpt-3.5-turbo",
                         messages: [
                             { role: "system", content: "You are a helpful assistant." },
                             { role: "user", content: prompt },
                         ],
-                        stream: true,
                     });
 
-                    // 스트림을 통해 메시지 처리
-                    for await (const chunk of stream) {
-                        if (chunk.choices[0]?.delta?.content) {
-                            const gptMessage = chunk.choices[0].delta.content;
-                            const botMessage = {
-                                chat: `GPT: ${gptMessage}`,
-                                user: { id: null, name: "GPT" },
-                            };
-                            io.emit("message", botMessage);  // GPT 응답 전송
-                        }
-                    }
+                    const gptMessage = gptResponse.data.choices[0].message.content;
+                    const botMessage = {
+                        chat: `GPT: ${gptMessage}`,
+                        user: { id: null, name: "GPT" },
+                    };
+
+                    io.emit("message", botMessage);  // GPT 응답 전송
                     cb({ ok: true });
                     return;
                 }
@@ -74,17 +108,43 @@ module.exports = function(io) {
                 io.emit("message", newMessage);
                 cb({ ok: true });
             } catch (error) {
-                console.error("API 호출 중 에러 발생:", error);
-                cb({ ok: false, error: "메시지 전송 실패: " + error.response?.data?.error?.message || error.message });
+                console.error("메시지 전송 중 오류 발생:", error);
+                cb({ ok: false, error: "메시지 전송 실패: " + error.message });
             }
         });
 
         socket.on("userLeave", async (userName, cb) => {
-            // 사용자 퇴장 처리 코드...
+            console.log("User leaving:", userName);
+            if (typeof cb !== "function") {
+                console.error("Callback is not a function");
+                return;
+            }
+            if (users[socket.id]) { // 사용자 정보가 있을 경우에만 감소
+                connectedUsers--;
+                const leaveMessage = {
+                    chat: `${userName} 님이 나갔습니다.`,
+                    user: { id: null, name: "system" },
+                };
+                io.emit("message", leaveMessage);
+                io.emit("userCount", connectedUsers);
+                delete users[socket.id]; // 사용자 정보 삭제
+            }
+            cb({ ok: true });
         });
 
         socket.on("disconnect", () => {
-            // 소켓 연결 해제 처리 코드...
+            const user = users[socket.id]; // 연결이 끊어진 사용자를 찾음
+            if (user) {
+                connectedUsers--; // 연결된 사용자 수 감소
+                const leaveMessage = {
+                    chat: `${user.name} 님이 나갔습니다.`,
+                    user: { id: null, name: "system" },
+                };
+                io.emit("message", leaveMessage);
+                io.emit("userCount", connectedUsers);
+                delete users[socket.id]; // 사용자 정보 삭제
+            }
+            console.log("client disconnected", socket.id);
         });
     });
 
