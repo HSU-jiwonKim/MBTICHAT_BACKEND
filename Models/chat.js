@@ -1,21 +1,19 @@
-// 채팅 스키마 파일
+const Chat = require("../Models/chat"); // require로 Chat 모델 가져오기
 
-// Mongoose 라이브러리 가져오기
-const mongoose = require("mongoose");
+const chatController = {};
 
-// 채팅 스키마 정의하기
-const chatSchema = new mongoose.Schema({
-    chat: String, // 메세지 내용을 저장하는 필드
-    user: { // 유저 정보를 저장하는 필드
-        id: { // 유저 ID 정보를 저장하는 필드
-            type: mongoose.Schema.ObjectId, // 데이터 타입: MongoDB ObjectId
-            ref: "User", // User 모델과의 참조 관계 설정
+chatController.saveChat = async (message, user) => {
+    const newMessage = new Chat({
+        chat: message,
+        user: {
+            id: user._id,
+            name: user.name
         },
-        name: String, // 유저 이름을 저장하는 필드
-    },
-}, 
-{ timestamps: true } // 생성 및 수정 시간 자동 추가
-);
+        timestamp: new Date() // 현재 시간을 추가
+    });
 
-// Mongoose 모델 생성 및 내보내기
-module.exports = mongoose.model("Chat", chatSchema);
+    await newMessage.save(); // 메시지 저장
+    return newMessage;
+};
+
+module.exports = chatController; // chatController 내보내기
