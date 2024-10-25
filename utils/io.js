@@ -1,15 +1,15 @@
 // 환경 변수 설정을 위해 dotenv 패키지를 불러옵니다.
 import { Server } from 'socket.io'; // socket.io를 불러옵니다.
-import OpenAI from 'openai'; // OpenAI 클라이언트를 임포트합니다.
+import Gemini from 'gemini-api'; // Gemini API 클라이언트를 임포트합니다.
 import dotenv from 'dotenv'; // dotenv 패키지를 불러옵니다.
 import chatController from '../Controllers/chat.controller.js'; // require 대신 import 사용
 import userController from '../Controllers/user.controller.js'; // require 대신 import 사용
 
 dotenv.config(); // 환경 변수 로드
 
-// OpenAI API 초기화
-const client = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'], // 환경 변수에서 API 키를 로드합니다.
+// Gemini API 초기화
+const client = new Gemini({
+  apiKey: process.env['GEMINI_API_KEY'], // 환경 변수에서 Gemini API 키를 로드합니다.
 });
 
 // API 호출 쿨다운 설정
@@ -84,32 +84,30 @@ export default function (io) {
       }
       try {
         const user = await userController.checkUser(socket.id);
-
-        // GPT와 상호작용하는 부분
         const now = Date.now();
-        if (message.startsWith('!GPT')) {
-          // 쿨다운 체크
+
+        // Gemini와 상호작용하는 부분
+        if (message.startsWith('!Gemini')) {
           if (now - lastGPTCallTime < GPT_COOLDOWN) {
-            cb({ ok: false, error: 'Too many requests. Please wait a few seconds before sending another GPT request.' });
+            cb({ ok: false, error: '너무 많은 요청입니다. 몇 초 후에 다시 시도해주세요.' });
             return;
           }
-          lastGPTCallTime = now; // 마지막 호출 시간 업데이트
+          lastGPTCallTime = now;
 
-          const prompt = message.replace('!GPT', '').trim();
+          const prompt = message.replace('!Gemini', '').trim();
 
-          // 새로운 OpenAI API 호출 방식으로 변경
-          const chatCompletion = await client.chat.completions.create({
+          // Gemini API 호출
+          const geminiResponse = await client.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
-            model: 'gpt-3.5-turbo',
+            model: 'models/gemini-1.5-flash', // Gemini 모델 이름을 'gemini-1.5-flash'로 변경
           });
 
-          const gptMessage = chatCompletion.choices[0].message.content; // 응답 메시지 가져오기
+          const geminiMessage = geminiResponse.choices[0].message.content;
           const botMessage = {
-            chat: `GPT: ${gptMessage}`,
-            user: { id: null, name: 'GPT' },
+            chat: `Gemini: ${geminiMessage}`,
+            user: { id: null, name: 'Gemini' },
           };
-
-          io.emit('message', botMessage); // GPT 응답 전송
+          io.emit('message', botMessage); // Gemini 응답 전송
           cb({ ok: true });
           return;
         }
@@ -120,11 +118,7 @@ export default function (io) {
         cb({ ok: true });
       } catch (error) {
         console.error('메시지 전송 중 오류 발생:', error);
-        if (error.code === 'insufficient_quota') {
-          cb({ ok: false, error: 'API 사용 한도를 초과했습니다. 다음에 다시 시도해주세요.' });
-        } else {
-          cb({ ok: false, error: '메시지 전송 실패: ' + error.message });
-        }
+        cb({ ok: false, error: '메시지 전송 실패: ' + error.message });
       }
     });
 
