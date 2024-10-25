@@ -12,6 +12,10 @@ const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'], // 환경 변수에서 API 키를 로드합니다.
 });
 
+// API 호출 쿨다운 설정
+let lastGPTCallTime = 0; 
+const GPT_COOLDOWN = 5000; // 5초 쿨다운
+
 export default function (io) {
   let connectedUsers = 0;
   const users = {}; // 사용자 정보를 저장할 객체
@@ -82,7 +86,15 @@ export default function (io) {
         const user = await userController.checkUser(socket.id);
 
         // GPT와 상호작용하는 부분
+        const now = Date.now();
         if (message.startsWith('!GPT')) {
+          // 쿨다운 체크
+          if (now - lastGPTCallTime < GPT_COOLDOWN) {
+            cb({ ok: false, error: 'Too many requests. Please wait a few seconds before sending another GPT request.' });
+            return;
+          }
+          lastGPTCallTime = now; // 마지막 호출 시간 업데이트
+
           const prompt = message.replace('!GPT', '').trim();
 
           // 새로운 OpenAI API 호출 방식으로 변경
@@ -108,7 +120,11 @@ export default function (io) {
         cb({ ok: true });
       } catch (error) {
         console.error('메시지 전송 중 오류 발생:', error);
-        cb({ ok: false, error: '메시지 전송 실패: ' + error.message });
+        if (error.code === 'insufficient_quota') {
+          cb({ ok: false, error: 'API 사용 한도를 초과했습니다. 다음에 다시 시도해주세요.' });
+        } else {
+          cb({ ok: false, error: '메시지 전송 실패: ' + error.message });
+        }
       }
     });
 
