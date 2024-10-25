@@ -1,6 +1,4 @@
-// 환경 변수 설정을 위해 dotenv 패키지를 불러옵니다.
 require('dotenv').config();
-console.log("API Key:", process.env.OPENAI_API_KEY);  // API 키가 제대로 로드되었는지 확인
 const { Configuration, OpenAIApi } = require('openai');
 
 const chatController = require("../Controllers/chat.controller.js");
