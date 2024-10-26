@@ -67,17 +67,10 @@ export default function (io) {
 
         const welcomeMessage = {
           chat: `안녕하세요! MBTICHAT에 오신 것을 환영해요 ${user.name}님! !부기 <원하는 말>을 입력하시면 저를 호출하실 수 있어요!`,
-          user: { id: null, name: 'system' },
+          user: { id: null, name: '부기' }, // Gemini의 이름 사용
           timestamp: new Date().toISOString(), // ISO 형식으로 변경
         };
         io.emit('message', welcomeMessage);
-
-        const userJoinMessage = {
-          chat: `${user.name} 님이 들어왔습니다.`,
-          user: { id: null, name: 'system' },
-          timestamp: new Date().toISOString(), // ISO 형식으로 변경
-        };
-        io.emit('message', userJoinMessage);
       } catch (error) {
         cb({ ok: false, error: error.message });
       }
