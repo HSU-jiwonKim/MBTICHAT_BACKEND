@@ -165,3 +165,4 @@ export default function (io) {
   io.on('error', (error) => {
     console.error('Server error:', error);
   });
+}
