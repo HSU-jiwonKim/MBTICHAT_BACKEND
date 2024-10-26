@@ -98,6 +98,7 @@ export default function (io) {
           const userMessage = {
             chat: message, // 사용자 메시지만 남기기
             user: { id: user.id, name: user.name },
+            timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
           };
           io.emit('message', userMessage);
 
@@ -116,7 +117,7 @@ export default function (io) {
             const response = await generativeModel.generateContent(request);
             console.log('Gemini API 응답:', response); // 응답 로깅
 
-            // candidates 배열이 비어 있지 않은지 확인
+            // 응답이 유효한지 확인
             if (response?.response?.candidates && response.response.candidates.length > 0) {
               let fullTextResponse = response.response.candidates[0].content.parts[0].text;
 
@@ -128,11 +129,12 @@ export default function (io) {
               const botMessage = {
                 chat: `부기: ${fullTextResponse}`, // "부기: [응답 내용]"
                 user: { id: null, name: '부기' },
+                timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
               };
               io.emit('message', botMessage);
               cb({ ok: true });
             } else {
-              cb({ ok: false, error: 'Gemini API 응답이 유효하지 않습니다.' });
+              cb({ ok: false, error: '유효한 응답을 받지 못했습니다.' });
             }
 
           } catch (error) {
@@ -143,6 +145,7 @@ export default function (io) {
         }
 
         const newMessage = await chatController.saveChat(message, user);
+        newMessage.timestamp = new Date().toLocaleTimeString('ko-KR'); // 현재 시간 추가
         io.emit('message', newMessage);
         cb({ ok: true });
       } catch (error) {
@@ -162,6 +165,7 @@ export default function (io) {
         const leaveMessage = {
           chat: `${userName} 님이 나갔습니다.`,
           user: { id: null, name: 'system' },
+          timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
         };
         io.emit('message', leaveMessage);
         io.emit('userCount', connectedUsers);
@@ -177,6 +181,7 @@ export default function (io) {
         const leaveMessage = {
           chat: `${user.name} 님이 나갔습니다.`,
           user: { id: null, name: 'system' },
+          timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
         };
         io.emit('message', leaveMessage);
         io.emit('userCount', connectedUsers);
