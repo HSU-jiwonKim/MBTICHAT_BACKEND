@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { PredictionServiceClient } from '@google-cloud/aiplatform'; 
+import { VertexAI } from '@google-cloud/vertexai'; 
 import dotenv from 'dotenv';
 import chatController from '../Controllers/chat.controller.js';
 import userController from '../Controllers/user.controller.js';
@@ -7,7 +7,7 @@ import userController from '../Controllers/user.controller.js';
 dotenv.config();
 
 // Vertex AI API 초기화
-const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com'; // API 엔드포인트 설정
+const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com'; 
 const clientOptions = {
   apiEndpoint: API_ENDPOINT,
   credentials: {
@@ -16,7 +16,7 @@ const clientOptions = {
   },
 };
 
-const predictionServiceClient = new PredictionServiceClient(clientOptions); // PredictionServiceClient 초기화
+const vertexAI = new VertexAI(clientOptions); // VertexAI 초기화
 
 // API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
@@ -98,22 +98,19 @@ export default function (io) {
           const prompt = message.replace('!Gemini', '').trim();
 
           // Gemini API 호출 (Vertex AI API 사용)
-          const endpoint = `projects/${process.env.GOOGLE_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1.5-flash-001`; // 모델 이름 수정
-          const parameters = {
-            temperature: 0.7, // 필요에 따라 조정
-            // 추가 매개변수 설정 가능
-          };
+          const generativeModel = vertexAI.getGenerativeModel({
+            model: 'gemini-1.5-flash-001',
+          });
+
           const request = {
-            endpoint,
-            instances: [{ content: prompt }],
-            parameters,
+            contents: [{role: 'user', parts: [{ text: prompt }]}],
           };
 
-          const [response] = await predictionServiceClient.predict(request);
-          const geminiMessage = response.predictions[0].text; // 응답에서 텍스트 추출
+          const responseStream = await generativeModel.generateContentStream(request);
+          const fullTextResponse = await responseStream.response.candidates[0].content.parts[0].text;
 
           const botMessage = {
-            chat: `Gemini: ${geminiMessage}`,
+            chat: `Gemini: ${fullTextResponse}`,
             user: { id: null, name: 'Gemini' },
           };
           io.emit('message', botMessage);
@@ -168,4 +165,3 @@ export default function (io) {
   io.on('error', (error) => {
     console.error('Server error:', error);
   });
-}
