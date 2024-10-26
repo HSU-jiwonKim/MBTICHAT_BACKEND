@@ -73,6 +73,15 @@ export default function (io) {
           timestamp: new Date().toISOString(), // ISO 형식으로 변경
         };
         io.emit('message', welcomeMessage);
+
+        // 방에 들어왔다는 메시지 추가
+        const joinMessage = {
+          chat: `${user.name} 님이 방에 들어왔습니다.`,
+          user: { id: null, name: 'system' },
+          timestamp: new Date().toISOString(), // ISO 형식으로 변경
+        };
+        io.emit('message', joinMessage);
+
       } catch (error) {
         cb({ ok: false, error: error.message });
       }
