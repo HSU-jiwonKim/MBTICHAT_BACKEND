@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { PredictionServiceClient } from '@google-cloud/aiplatform'; // 필요한 모듈 추가
+import { PredictionServiceClient } from '@google-cloud/aiplatform'; 
 import dotenv from 'dotenv';
 import chatController from '../Controllers/chat.controller.js';
 import userController from '../Controllers/user.controller.js';
@@ -7,7 +7,7 @@ import userController from '../Controllers/user.controller.js';
 dotenv.config();
 
 // Vertex AI API 초기화
-const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com';
+const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com'; // API 엔드포인트 설정
 const clientOptions = {
   apiEndpoint: API_ENDPOINT,
   credentials: {
@@ -98,7 +98,7 @@ export default function (io) {
           const prompt = message.replace('!Gemini', '').trim();
 
           // Gemini API 호출 (Vertex AI API 사용)
-          const endpoint = `projects/${process.env.GOOGLE_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1-5-flash`;
+          const endpoint = `projects/${process.env.GOOGLE_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1-5-flash-latest`; // 모델 이름 수정
           const parameters = {
             temperature: 0.7, // 필요에 따라 조정
             // 추가 매개변수 설정 가능
