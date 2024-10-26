@@ -1,6 +1,5 @@
 import { Server } from 'socket.io'; // socket.io를 불러옵니다.
-import pkg from 'gemini-api'; // gemini-api를 default로 가져옵니다.
-const Gemini = pkg; // Gemini를 default export로 가져옵니다.
+import googleGenerativeAI from 'google.generativeai'; // google.generativeai를 불러옵니다.
 import dotenv from 'dotenv'; // dotenv 패키지를 불러옵니다.
 import chatController from '../Controllers/chat.controller.js'; // require 대신 import 사용
 import userController from '../Controllers/user.controller.js'; // require 대신 import 사용
@@ -8,8 +7,8 @@ import userController from '../Controllers/user.controller.js'; // require 대�
 dotenv.config(); // 환경 변수 로드
 
 // Gemini API 초기화
-const client = new Gemini({
-  apiKey: process.env['GEMINI_API_KEY'], // 환경 변수에서 Gemini API 키를 로드합니다.
+googleGenerativeAI.configure({
+  apiKey: process.env.GOOGLE_API_KEY, // 환경 변수에서 Gemini API 키를 로드합니다.
 });
 
 // API 호출 쿨다운 설정
@@ -92,12 +91,10 @@ export default function (io) {
           const prompt = message.replace('!Gemini', '').trim();
 
           // Gemini API 호출
-          const geminiResponse = await client.chat.completions.create({
-            messages: [{ role: 'user', content: prompt }],
-            model: 'models/gemini-1.5-flash', // Gemini 모델 이름
-          });
+          const model = new googleGenerativeAI.GenerativeModel('gemini-1.5-flash');
+          const geminiResponse = await model.generate_content(prompt);
 
-          const geminiMessage = geminiResponse.choices[0].message.content;
+          const geminiMessage = geminiResponse.content;
           const botMessage = {
             chat: `Gemini: ${geminiMessage}`,
             user: { id: null, name: 'Gemini' },
