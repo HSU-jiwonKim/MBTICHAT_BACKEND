@@ -1,6 +1,5 @@
 import { Server } from 'socket.io';
 import { GoogleAuth } from 'google-auth-library';
-import { v2beta3 } from '@google-cloud/aiplatform';
 import dotenv from 'dotenv';
 import chatController from '../Controllers/chat.controller.js';
 import userController from '../Controllers/user.controller.js';
@@ -16,7 +15,6 @@ const clientOptions = {
     private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
   },
 };
-const predictionServiceClient = new v2beta3.PredictionServiceClient(clientOptions);
 
 // API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
@@ -108,6 +106,7 @@ export default function (io) {
             instances: [{ content: prompt }],
             parameters,
           };
+
           const [response] = await predictionServiceClient.predict(request);
           const geminiMessage = response.predictions[0].text; // 응답에서 텍스트 추출
 
