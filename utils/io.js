@@ -12,7 +12,7 @@ const clientOptions = {
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
 
-const vertexAI = new VertexAI(clientOptions); 
+const vertexAI = new VertexAI(clientOptions);
 
 // API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
@@ -104,13 +104,10 @@ export default function (io) {
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
             };
 
-            const responseStream = await generativeModel.generateContentStream(request);
-            let fullTextResponse = '';
-
-            // for await...of 루프를 사용하여 스트리밍 응답 처리
-            for await (const chunk of responseStream) {
-              fullTextResponse += chunk.text;
-            }
+            // generateContent 메서드 사용
+            const response = await generativeModel.generateContent(request);
+            console.log('Gemini API 응답:', response); // 응답 로깅
+            const fullTextResponse = response.candidates[0].content.parts[0].text;
 
             const botMessage = {
               chat: `Gemini: ${fullTextResponse}`,
