@@ -96,7 +96,7 @@ export default function (io) {
 
           // 사용자 메시지를 채팅방에 남기기
           const userMessage = {
-            chat: `${user.name}: ${message}`,
+            chat: message, // 사용자 메시지만 남기기
             user: { id: user.id, name: user.name },
           };
           io.emit('message', userMessage);
@@ -126,7 +126,7 @@ export default function (io) {
               }
 
               const botMessage = {
-                chat: `부기: ${fullTextResponse}`,
+                chat: `부기: ${fullTextResponse}`, // "부기: [응답 내용]"
                 user: { id: null, name: '부기' },
               };
               io.emit('message', botMessage);
