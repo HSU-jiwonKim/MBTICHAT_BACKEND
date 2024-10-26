@@ -21,6 +21,8 @@ const GPT_COOLDOWN = 5000;
 export default function (io) {
   let connectedUsers = 0;
   const users = {};
+  const FAKE_USER_NAME = '부기_가상유저'; // 페이크 유저 이름
+  let fakeUserInterval;
 
   io.on('connection', async (socket) => {
     if (users[socket.id]) {
@@ -61,9 +63,17 @@ export default function (io) {
         const dateMessage = {
           chat: `📅${new Intl.DateTimeFormat('ko-KR', options).format(today)} >`,
           user: { id: null, name: 'system' },
-          timestamp: new Date().toISOString(), // ISO 형식으로 변경
+          timestamp: new Date().toISOString(),
         };
         socket.emit('message', dateMessage);
+
+        // 방에 들어왔다는 메시지 추가
+        const joinMessage = {
+          chat: `${user.name} 님이 방에 들어왔습니다.`,
+          user: { id: null, name: 'system' },
+          timestamp: new Date().toISOString(), // ISO 형식으로 변경
+        };
+        io.emit('message', joinMessage);
 
         const welcomeMessage = {
           chat: `안녕하세요! MBTICHAT에 오신 것을 환영합니다, ${user.name}님!  
@@ -74,18 +84,33 @@ export default function (io) {
         };
         io.emit('message', welcomeMessage);
 
-        // 방에 들어왔다는 메시지 추가
-        const joinMessage = {
-          chat: `${user.name} 님이 방에 들어왔습니다.`,
-          user: { id: null, name: 'system' },
-          timestamp: new Date().toISOString(), // ISO 형식으로 변경
-        };
-        io.emit('message', joinMessage);
-
       } catch (error) {
         cb({ ok: false, error: error.message });
       }
     });
+
+    // 페이크 유저 기능 추가
+    const addFakeUser = () => {
+      const fakeUser = {
+        id: Date.now(), // 고유 ID 생성
+        name: FAKE_USER_NAME,
+      };
+      users[fakeUser.id] = fakeUser;
+      connectedUsers++;
+
+      // 방에 들어왔다는 메시지를 표시하지 않음
+
+      // 3분 후에 나가기
+      setTimeout(() => {
+        connectedUsers--;
+        delete users[fakeUser.id];
+
+        // 페이크 유저가 나갔다는 메시지도 표시하지 않음
+      }, 3000); // 3초 후에 퇴장
+    };
+
+    // 3분마다 페이크 유저 추가
+    fakeUserInterval = setInterval(addFakeUser, 180000); // 180000 ms = 3분
 
     socket.on('sendMessage', async (message, cb) => {
       console.log('Message to send:', message);
@@ -110,7 +135,7 @@ export default function (io) {
           const userMessage = {
             chat: message,
             user: { id: user.id, name: user.name },
-            timestamp: new Date().toISOString(), // ISO 형식으로 변경
+            timestamp: new Date().toISOString(),
           };
           io.emit('message', userMessage);
 
@@ -137,7 +162,7 @@ export default function (io) {
               const botMessage = {
                 chat: `부기: ${fullTextResponse}`,
                 user: { id: null, name: '부기' },
-                timestamp: new Date().toISOString(), // ISO 형식으로 변경
+                timestamp: new Date().toISOString(),
               };
               io.emit('message', botMessage);
               cb({ ok: true });
@@ -153,7 +178,7 @@ export default function (io) {
         }
 
         const newMessage = await chatController.saveChat(message, user);
-        newMessage.timestamp = new Date().toISOString(); // ISO 형식으로 변경
+        newMessage.timestamp = new Date().toISOString();
         io.emit('message', newMessage);
         cb({ ok: true });
       } catch (error) {
@@ -173,7 +198,7 @@ export default function (io) {
         const leaveMessage = {
           chat: `${userName} 님이 나갔습니다.`,
           user: { id: null, name: 'system' },
-          timestamp: new Date().toISOString(), // ISO 형식으로 변경
+          timestamp: new Date().toISOString(),
         };
         io.emit('message', leaveMessage);
         io.emit('userCount', connectedUsers);
@@ -189,7 +214,7 @@ export default function (io) {
         const leaveMessage = {
           chat: `${user.name} 님이 나갔습니다.`,
           user: { id: null, name: 'system' },
-          timestamp: new Date().toISOString(), // ISO 형식으로 변경
+          timestamp: new Date().toISOString(),
         };
         io.emit('message', leaveMessage);
         io.emit('userCount', connectedUsers);
@@ -197,6 +222,12 @@ export default function (io) {
       }
       console.log('client disconnected', socket.id);
     });
+  });
+
+  // 서버가 종료될 때 페이크 유저 타이머 정리
+  process.on('SIGINT', () => {
+    clearInterval(fakeUserInterval);
+    process.exit();
   });
 
   io.on('error', (error) => {
