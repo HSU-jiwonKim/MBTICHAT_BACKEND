@@ -1,28 +1,35 @@
-import { Server } from 'socket.io'; // socket.io를 불러옵니다.
-import googleGenerativeAI from 'google.generativeai'; // google.generativeai를 불러옵니다.
-import dotenv from 'dotenv'; // dotenv 패키지를 불러옵니다.
-import chatController from '../Controllers/chat.controller.js'; // require 대신 import 사용
-import userController from '../Controllers/user.controller.js'; // require 대신 import 사용
+import { Server } from 'socket.io';
+import { GoogleAuth } from 'google-auth-library';
+import { v2beta3 } from '@google-cloud/aiplatform';
+import dotenv from 'dotenv';
+import chatController from '../Controllers/chat.controller.js';
+import userController from '../Controllers/user.controller.js';
 
-dotenv.config(); // 환경 변수 로드
+dotenv.config();
 
-// Gemini API 초기화
-googleGenerativeAI.configure({
-  apiKey: process.env.GOOGLE_API_KEY, // 환경 변수에서 Gemini API 키를 로드합니다.
-});
+// Vertex AI API 초기화
+const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com';
+const clientOptions = {
+  apiEndpoint: API_ENDPOINT,
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  },
+};
+const predictionServiceClient = new v2beta3.PredictionServiceClient(clientOptions);
 
 // API 호출 쿨다운 설정
-let lastGPTCallTime = 0; 
+let lastGPTCallTime = 0;
 const GPT_COOLDOWN = 5000; // 5초 쿨다운
 
 export default function (io) {
   let connectedUsers = 0;
-  const users = {}; // 사용자 정보를 저장할 객체
+  const users = {};
 
   io.on('connection', async (socket) => {
     if (users[socket.id]) {
       console.log('기존 사용자 재연결:', socket.id);
-      return; // 기존 사용자일 경우 새로운 연결을 만들지 않음
+      return;
     }
 
     console.log('client is connected', socket.id);
@@ -41,9 +48,9 @@ export default function (io) {
         }
 
         const user = await userController.saveUser(userName, socket.id);
-        users[socket.id] = user; // 소켓 ID를 키로 사용자 정보를 저장
-        connectedUsers++; // 새로운 사용자가 연결되었으므로 증가
-        io.emit('userCount', connectedUsers); // 사용자 수 업데이트
+        users[socket.id] = user;
+        connectedUsers++;
+        io.emit('userCount', connectedUsers);
 
         cb({ ok: true, data: user });
 
@@ -90,11 +97,20 @@ export default function (io) {
 
           const prompt = message.replace('!Gemini', '').trim();
 
-          // Gemini API 호출
-          const model = new googleGenerativeAI.GenerativeModel('gemini-1.5-flash');
-          const geminiResponse = await model.generate_content(prompt);
+          // Gemini API 호출 (Vertex AI API 사용)
+          const endpoint = `projects/${process.env.GOOGLE_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1-5-flash`;
+          const parameters = {
+            temperature: 0.7, // 필요에 따라 조정
+            // 추가 매개변수 설정 가능
+          };
+          const request = {
+            endpoint,
+            instances: [{ content: prompt }],
+            parameters,
+          };
+          const [response] = await predictionServiceClient.predict(request);
+          const geminiMessage = response.predictions[0].text; // 응답에서 텍스트 추출
 
-          const geminiMessage = geminiResponse.content;
           const botMessage = {
             chat: `Gemini: ${geminiMessage}`,
             user: { id: null, name: 'Gemini' },
@@ -127,7 +143,7 @@ export default function (io) {
         };
         io.emit('message', leaveMessage);
         io.emit('userCount', connectedUsers);
-        delete users[socket.id]; // 사용자 정보 삭제
+        delete users[socket.id];
       }
       cb({ ok: true });
     });
@@ -142,7 +158,7 @@ export default function (io) {
         };
         io.emit('message', leaveMessage);
         io.emit('userCount', connectedUsers);
-        delete users[socket.id]; // 사용자 정보 삭제
+        delete users[socket.id];
       }
       console.log('client disconnected', socket.id);
     });
