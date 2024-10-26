@@ -67,7 +67,7 @@ export default function (io) {
 
         const welcomeMessage = {
           chat: `안녕하세요! MBTICHAT에 오신 것을 환영합니다, ${user.name}님!  
-          저를 호출하시려면 \`!부기 <원하는 말>\`을 입력해 주세요.  
+          저를 호출하시려면 !부기 <원하는 말> 을 입력해 주세요.  
           궁금한 점이 있으시면 언제든지 말씀해 주세요! 😊`,          
           user: { id: null, name: '부기' }, // Gemini의 이름 사용
           timestamp: new Date().toISOString(), // ISO 형식으로 변경
