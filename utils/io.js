@@ -61,14 +61,14 @@ export default function (io) {
         const dateMessage = {
           chat: `📅${new Intl.DateTimeFormat('ko-KR', options).format(today)} >`,
           user: { id: null, name: 'system' },
-          timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
+          timestamp: new Date().toISOString(), // ISO 형식으로 변경
         };
         socket.emit('message', dateMessage);
 
         const welcomeMessage = {
           chat: `${user.name} 님이 들어왔습니다.`,
           user: { id: null, name: 'system' },
-          timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
+          timestamp: new Date().toISOString(), // ISO 형식으로 변경
         };
         io.emit('message', welcomeMessage);
       } catch (error) {
@@ -96,16 +96,14 @@ export default function (io) {
 
           const prompt = message.replace('!부기', '').trim() + ' (간단히 대답해 주세요)';
 
-          // 사용자 메시지를 채팅방에 남기기
           const userMessage = {
-            chat: message, // 사용자 메시지만 남기기
+            chat: message,
             user: { id: user.id, name: user.name },
-            timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
+            timestamp: new Date().toISOString(), // ISO 형식으로 변경
           };
           io.emit('message', userMessage);
 
           try {
-            // Gemini API 호출
             const generativeModel = vertexAI.getGenerativeModel({
               model: 'gemini-1.5-flash-001',
             });
@@ -115,23 +113,20 @@ export default function (io) {
               maxTokens: 50, // 최대 50 토큰 응답
             };
 
-            // generateContent 메서드 사용
             const response = await generativeModel.generateContent(request);
-            console.log('Gemini API 응답:', response); // 응답 로깅
+            console.log('Gemini API 응답:', response);
 
-            // 응답이 유효한지 확인
             if (response?.response?.candidates && response.response.candidates.length > 0) {
               let fullTextResponse = response.response.candidates[0].content.parts[0].text;
 
-              // 응답을 100자 이하로 자르기
               if (fullTextResponse.length > 100) {
                 fullTextResponse = fullTextResponse.substring(0, 100) + '...';
               }
 
               const botMessage = {
-                chat: `부기: ${fullTextResponse}`, // "부기: [응답 내용]"
+                chat: `부기: ${fullTextResponse}`,
                 user: { id: null, name: '부기' },
-                timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
+                timestamp: new Date().toISOString(), // ISO 형식으로 변경
               };
               io.emit('message', botMessage);
               cb({ ok: true });
@@ -147,7 +142,7 @@ export default function (io) {
         }
 
         const newMessage = await chatController.saveChat(message, user);
-        newMessage.timestamp = new Date().toLocaleTimeString('ko-KR'); // 현재 시간 추가
+        newMessage.timestamp = new Date().toISOString(); // ISO 형식으로 변경
         io.emit('message', newMessage);
         cb({ ok: true });
       } catch (error) {
@@ -167,7 +162,7 @@ export default function (io) {
         const leaveMessage = {
           chat: `${userName} 님이 나갔습니다.`,
           user: { id: null, name: 'system' },
-          timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
+          timestamp: new Date().toISOString(), // ISO 형식으로 변경
         };
         io.emit('message', leaveMessage);
         io.emit('userCount', connectedUsers);
@@ -183,7 +178,7 @@ export default function (io) {
         const leaveMessage = {
           chat: `${user.name} 님이 나갔습니다.`,
           user: { id: null, name: 'system' },
-          timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
+          timestamp: new Date().toISOString(), // ISO 형식으로 변경
         };
         io.emit('message', leaveMessage);
         io.emit('userCount', connectedUsers);
