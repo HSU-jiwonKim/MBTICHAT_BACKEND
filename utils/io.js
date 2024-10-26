@@ -12,7 +12,7 @@ const clientOptions = {
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
 
-const vertexAI = new VertexAI(clientOptions); 
+const vertexAI = new VertexAI(clientOptions);
 
 // API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
@@ -104,6 +104,7 @@ export default function (io) {
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
             };
 
+            // Promise 해결 후 스트림 객체 사용
             const responseStream = await generativeModel.generateContentStream(request);
             let fullTextResponse = '';
 
