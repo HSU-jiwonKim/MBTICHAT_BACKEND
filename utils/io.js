@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { VertexAI } from '@google-cloud/vertexai'; 
+import { VertexAI } from '@google-cloud/vertexai';
 import dotenv from 'dotenv';
 import chatController from '../Controllers/chat.controller.js';
 import userController from '../Controllers/user.controller.js';
@@ -7,21 +7,16 @@ import userController from '../Controllers/user.controller.js';
 dotenv.config();
 
 // Vertex AI API 초기화
-const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com'; 
 const clientOptions = {
-  apiEndpoint: API_ENDPOINT,
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  },
-  project: process.env.GOOGLE_PROJECT_ID, // 프로젝트 ID 추가
+  project: process.env.GOOGLE_PROJECT_ID,
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
 
-const vertexAI = new VertexAI(clientOptions); // VertexAI 초기화
+const vertexAI = new VertexAI(clientOptions); 
 
 // API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
-const GPT_COOLDOWN = 5000; // 5초 쿨다운
+const GPT_COOLDOWN = 5000; 
 
 export default function (io) {
   let connectedUsers = 0;
@@ -85,6 +80,7 @@ export default function (io) {
         console.error('Callback is not a function');
         return;
       }
+
       try {
         const user = await userController.checkUser(socket.id);
         const now = Date.now();
@@ -98,24 +94,41 @@ export default function (io) {
 
           const prompt = message.replace('!Gemini', '').trim();
 
-          // Gemini API 호출 (Vertex AI API 사용)
-          const generativeModel = vertexAI.getGenerativeModel({
-            model: 'gemini-1.5-flash-001',
-          });
+          try {
+            // Gemini API 호출
+            const generativeModel = vertexAI.getGenerativeModel({
+              model: 'gemini-1.5-flash-001',
+            });
 
-          const request = {
-            contents: [{role: 'user', parts: [{ text: prompt }]}],
-          };
+            const request = {
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            };
 
-          const responseStream = await generativeModel.generateContentStream(request);
-          const fullTextResponse = await responseStream.response.candidates[0].content.parts[0].text;
+            const responseStream = await generativeModel.generateContentStream(request);
+            let fullTextResponse = '';
 
-          const botMessage = {
-            chat: `Gemini: ${fullTextResponse}`,
-            user: { id: null, name: 'Gemini' },
-          };
-          io.emit('message', botMessage);
-          cb({ ok: true });
+            // 스트리밍 응답 처리 및 오류 처리
+            responseStream.on('data', (chunk) => {
+              fullTextResponse += chunk.text;
+            });
+
+            responseStream.on('end', () => {
+              const botMessage = {
+                chat: `Gemini: ${fullTextResponse}`,
+                user: { id: null, name: 'Gemini' },
+              };
+              io.emit('message', botMessage);
+              cb({ ok: true });
+            });
+
+            responseStream.on('error', (error) => {
+              console.error('Gemini API 호출 오류:', error);
+              cb({ ok: false, error: 'Gemini API 호출 오류: ' + error.message });
+            });
+          } catch (error) {
+            console.error('Gemini API 호출 오류:', error);
+            cb({ ok: false, error: 'Gemini API 호출 오류: ' + error.message });
+          }
           return;
         }
 
