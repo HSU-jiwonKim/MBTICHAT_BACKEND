@@ -92,7 +92,7 @@ export default function (io) {
           }
           lastGPTCallTime = now;
 
-          const prompt = message.replace('!Gemini', '').trim();
+          const prompt = message.replace('!Gemini', '').trim() + ' (간단히 대답해 주세요)';
 
           try {
             // Gemini API 호출
@@ -102,6 +102,7 @@ export default function (io) {
 
             const request = {
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              maxTokens: 50, // 최대 50 토큰 응답
             };
 
             // generateContent 메서드 사용
@@ -110,7 +111,12 @@ export default function (io) {
 
             // candidates 배열이 비어 있지 않은지 확인
             if (response?.response?.candidates && response.response.candidates.length > 0) {
-              const fullTextResponse = response.response.candidates[0].content.parts[0].text;
+              let fullTextResponse = response.response.candidates[0].content.parts[0].text;
+
+              // 응답을 100자 이하로 자르기
+              if (fullTextResponse.length > 100) {
+                fullTextResponse = fullTextResponse.substring(0, 100) + '...';
+              }
 
               const botMessage = {
                 chat: `Gemini: ${fullTextResponse}`,
