@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { GoogleAuth } from 'google-auth-library';
+import { PredictionServiceClient } from '@google-cloud/aiplatform'; // 필요한 모듈 추가
 import dotenv from 'dotenv';
 import chatController from '../Controllers/chat.controller.js';
 import userController from '../Controllers/user.controller.js';
@@ -15,6 +15,8 @@ const clientOptions = {
     private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
   },
 };
+
+const predictionServiceClient = new PredictionServiceClient(clientOptions); // PredictionServiceClient 초기화
 
 // API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
