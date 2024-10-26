@@ -12,11 +12,11 @@ const clientOptions = {
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
 
-const vertexAI = new VertexAI(clientOptions);
+const vertexAI = new VertexAI(clientOptions); 
 
 // API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
-const GPT_COOLDOWN = 5000; 
+const GPT_COOLDOWN = 5000;
 
 export default function (io) {
   let connectedUsers = 0;
@@ -104,28 +104,21 @@ export default function (io) {
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
             };
 
-            // Promise 해결 후 스트림 객체 사용
             const responseStream = await generativeModel.generateContentStream(request);
             let fullTextResponse = '';
 
-            // 스트리밍 응답 처리 및 오류 처리
-            responseStream.on('data', (chunk) => {
+            // for await...of 루프를 사용하여 스트리밍 응답 처리
+            for await (const chunk of responseStream) {
               fullTextResponse += chunk.text;
-            });
+            }
 
-            responseStream.on('end', () => {
-              const botMessage = {
-                chat: `Gemini: ${fullTextResponse}`,
-                user: { id: null, name: 'Gemini' },
-              };
-              io.emit('message', botMessage);
-              cb({ ok: true });
-            });
+            const botMessage = {
+              chat: `Gemini: ${fullTextResponse}`,
+              user: { id: null, name: 'Gemini' },
+            };
+            io.emit('message', botMessage);
+            cb({ ok: true });
 
-            responseStream.on('error', (error) => {
-              console.error('Gemini API 호출 오류:', error);
-              cb({ ok: false, error: 'Gemini API 호출 오류: ' + error.message });
-            });
           } catch (error) {
             console.error('Gemini API 호출 오류:', error);
             cb({ ok: false, error: 'Gemini API 호출 오류: ' + error.message });
