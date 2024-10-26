@@ -98,7 +98,7 @@ export default function (io) {
           const prompt = message.replace('!Gemini', '').trim();
 
           // Gemini API 호출 (Vertex AI API 사용)
-          const endpoint = `projects/${process.env.GOOGLE_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1-5-flash-latest`; // 모델 이름 수정
+          const endpoint = `projects/${process.env.GOOGLE_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1.5-flash-001`; // 모델 이름 수정
           const parameters = {
             temperature: 0.7, // 필요에 따라 조정
             // 추가 매개변수 설정 가능
