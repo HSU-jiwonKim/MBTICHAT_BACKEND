@@ -3,6 +3,7 @@ import { GoogleAuth } from 'google-auth-library';
 import dotenv from 'dotenv';
 import chatController from '../Controllers/chat.controller.js';
 import userController from '../Controllers/user.controller.js';
+import { v2beta3 } from '@google-cloud/aiplatform'; // ES 모듈 모드로 수정
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ const clientOptions = {
     private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
   },
 };
+const predictionServiceClient = new v2beta3.PredictionServiceClient(clientOptions); // predictionServiceClient 선언
 
 // API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
@@ -107,7 +109,7 @@ export default function (io) {
             parameters,
           };
 
-          const [response] = await predictionServiceClient.predict(request);
+          const [response] = await predictionServiceClient.predict(request); // predictionServiceClient 사용
           const geminiMessage = response.predictions[0].text; // 응답에서 텍스트 추출
 
           const botMessage = {
