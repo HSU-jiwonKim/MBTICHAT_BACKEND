@@ -61,12 +61,14 @@ export default function (io) {
         const dateMessage = {
           chat: `📅${new Intl.DateTimeFormat('ko-KR', options).format(today)} >`,
           user: { id: null, name: 'system' },
+          timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
         };
         socket.emit('message', dateMessage);
 
         const welcomeMessage = {
           chat: `${user.name} 님이 들어왔습니다.`,
           user: { id: null, name: 'system' },
+          timestamp: new Date().toLocaleTimeString('ko-KR'), // 현재 시간 추가
         };
         io.emit('message', welcomeMessage);
       } catch (error) {
