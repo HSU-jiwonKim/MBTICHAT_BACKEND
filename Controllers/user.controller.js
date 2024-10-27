@@ -41,9 +41,14 @@ userController.checkUser = async (user_id, password) => {
     try {
         const user = await User.findOne({ user_id }); // 유저 찾기
 
+        // 유저가 존재하지 않는 경우
         if (!user) {
             return { success: false, message: '존재하지 않는 사용자입니다.' }; // 사용자 존재하지 않음
         }
+
+        // 디버깅을 위한 로깅
+        console.log("Found user:", user); // 유저 정보 출력
+        console.log("User password from DB:", user.password); // DB에서 가져온 비밀번호 출력
 
         // 비밀번호 확인 로직 (해시 비교)
         const isMatch = await bcrypt.compare(password, user.password);
@@ -55,24 +60,6 @@ userController.checkUser = async (user_id, password) => {
     } catch (error) {
         console.error("Error checking user:", error);
         return { success: false, message: "유저 정보를 확인하는 중 오류 발생" }; // 오류 메시지 추가
-    }
-};
-
-// 유저의 프로필 이미지를 업데이트하는 함수
-userController.updateProfileImage = async (userId, imageUrl) => {
-    try {
-        const user = await User.findById(userId);
-        if (!user) {
-            return { success: false, message: "사용자를 찾을 수 없습니다." }; // 사용자 찾지 못했을 때
-        }
-
-        user.profileImage = imageUrl; // 프로필 이미지 URL 업데이트
-        await user.save(); // 유저 정보 저장
-
-        return { success: true, user }; // 업데이트된 유저 정보 반환
-    } catch (error) {
-        console.error("Error updating profile image:", error);
-        return { success: false, message: "프로필 이미지를 업데이트하는 중 오류 발생" }; // 오류 메시지 추가
     }
 };
 
