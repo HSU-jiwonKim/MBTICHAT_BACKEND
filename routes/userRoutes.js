@@ -15,6 +15,13 @@ router.post('/signup', async (req, res) => {
     }
 
     try {
+        // 중복된 사용자 ID 확인
+        const existingUser = await User.findOne({ user_id });
+        if (existingUser) {
+            return res.status(400).json({ ok: false, error: 'User ID already exists.' }); // 사용자 ID 중복
+        }
+
+        // 새로운 사용자 생성
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ user_id, password: hashedPassword, nickname }); // user_id 저장
         await newUser.save();
