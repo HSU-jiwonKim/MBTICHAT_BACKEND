@@ -1,4 +1,5 @@
 import User from "../Models/user.js"; // User 모델 import
+import bcrypt from 'bcrypt'; // bcrypt 추가
 
 const userController = {};
 
@@ -10,9 +11,11 @@ userController.saveUser = async (userName, password, sid) => {
 
         // 없다면 새로 유저 정보 만들기
         if (!user) {
+            // 비밀번호 해시 처리
+            const hashedPassword = await bcrypt.hash(password, 10);
             user = new User({
                 name: userName,
-                password: password, // 비밀번호 추가
+                password: hashedPassword, // 해시된 비밀번호 저장
                 token: sid,
                 online: true,
             });
@@ -37,15 +40,16 @@ userController.checkUser = async (userName, password) => {
         const user = await User.findOne({ name: userName }); // 유저 찾기
 
         if (!user) {
-            return null; // 유저를 찾지 못하면 null 반환
+            return { success: false, message: '존재하지 않는 사용자입니다.' }; // 사용자 존재하지 않음
         }
 
-        // 비밀번호 확인 로직 (비밀번호 해시 비교 등 추가 필요)
-        if (user.password !== password) {
-            return null; // 비밀번호가 틀린 경우 null 반환
+        // 비밀번호 확인 로직 (해시 비교)
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return { success: false, message: '비밀번호가 틀렸습니다.' }; // 비밀번호 틀림
         }
 
-        return user; // 유저 정보 반환
+        return { success: true, user }; // 유저 정보 반환
     } catch (error) {
         console.error("Error checking user:", error);
         throw new Error("Error checking user");
