@@ -23,6 +23,8 @@ userController.saveUser = async (user_id, password, nickname) => {
         return { success: false, message: '비밀번호는 최소 8자 이상이어야 합니다.' };
     }
 
+    console.log("Attempting to save user:", { user_id, nickname }); // 입력값 출력
+
     try {
         // 이미 있는 유저인지 확인 (user_id와 nickname으로 중복 확인)
         const existingUser = await User.findOne({ user_id });
@@ -50,7 +52,7 @@ userController.saveUser = async (user_id, password, nickname) => {
 
         return { success: true, user }; // 저장된 유저 반환
     } catch (error) {
-        console.error("Error saving user:", error);
+        console.error("Error saving user:", error.message); // 구체적인 에러 메시지 출력
         return { success: false, message: "유저 정보를 저장하는 중 오류 발생" }; // 오류 메시지 추가
     }
 };
@@ -74,7 +76,7 @@ userController.checkUser = async (user_id, password) => {
         console.log("User logged in successfully:", user); // 로그인 성공 로그
         return { success: true, user }; // 유저 정보 반환
     } catch (error) {
-        console.error("Error checking user:", error);
+        console.error("Error checking user:", error.message); // 구체적인 에러 메시지 출력
         return { success: false, message: "유저 정보를 확인하는 중 오류 발생" }; // 오류 메시지 추가
     }
 };
