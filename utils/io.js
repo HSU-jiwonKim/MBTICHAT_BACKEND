@@ -21,8 +21,6 @@ const GPT_COOLDOWN = 5000;
 export default function (io) {
   let connectedUsers = 0;
   const users = {};
-  const FAKE_USER_NAME = '부기_가상유저'; // 페이크 유저 이름
-  let fakeUserInterval;
 
   io.on('connection', async (socket) => {
     if (users[socket.id]) {
@@ -71,7 +69,7 @@ export default function (io) {
         const joinMessage = {
           chat: `${user.name} 님이 방에 들어왔습니다.`,
           user: { id: null, name: 'system' },
-          timestamp: new Date().toISOString(), // ISO 형식으로 변경
+          timestamp: new Date().toISOString(),
         };
         io.emit('message', joinMessage);
 
@@ -79,8 +77,8 @@ export default function (io) {
           chat: `안녕하세요! MBTICHAT에 오신 것을 환영합니다, ${user.name}님!  
           저를 호출하시려면 !부기 <원하는 말> 을 입력해 주세요.  
           궁금한 점이 있으시면 언제든지 말씀해 주세요! 😊`,          
-          user: { id: null, name: '부기' }, // Gemini의 이름 사용
-          timestamp: new Date().toISOString(), // ISO 형식으로 변경
+          user: { id: null, name: '부기' },
+          timestamp: new Date().toISOString(),
         };
         io.emit('message', welcomeMessage);
 
@@ -88,29 +86,6 @@ export default function (io) {
         cb({ ok: false, error: error.message });
       }
     });
-
-    // 페이크 유저 기능 추가
-    const addFakeUser = () => {
-      const fakeUser = {
-        id: Date.now(), // 고유 ID 생성
-        name: FAKE_USER_NAME,
-      };
-      users[fakeUser.id] = fakeUser;
-      connectedUsers++;
-
-      // 방에 들어왔다는 메시지를 표시하지 않음
-
-      // 3분 후에 나가기
-      setTimeout(() => {
-        connectedUsers--;
-        delete users[fakeUser.id];
-
-        // 페이크 유저가 나갔다는 메시지도 표시하지 않음
-      }, 3000); // 3초 후에 퇴장
-    };
-
-    // 3분마다 페이크 유저 추가
-    fakeUserInterval = setInterval(addFakeUser, 180000); // 180000 ms = 3분
 
     socket.on('sendMessage', async (message, cb) => {
       console.log('Message to send:', message);
@@ -146,7 +121,7 @@ export default function (io) {
 
             const request = {
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
-              maxTokens: 50, // 최대 50 토큰 응답
+              maxTokens: 50,
             };
 
             const response = await generativeModel.generateContent(request);
@@ -222,12 +197,6 @@ export default function (io) {
       }
       console.log('client disconnected', socket.id);
     });
-  });
-
-  // 서버가 종료될 때 페이크 유저 타이머 정리
-  process.on('SIGINT', () => {
-    clearInterval(fakeUserInterval);
-    process.exit();
   });
 
   io.on('error', (error) => {
