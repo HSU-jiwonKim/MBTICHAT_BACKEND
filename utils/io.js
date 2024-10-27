@@ -3,6 +3,7 @@ import { VertexAI } from '@google-cloud/vertexai';
 import dotenv from 'dotenv';
 import chatController from '../Controllers/chat.controller.js';
 import userController from '../Controllers/user.controller.js';
+import { v4 as uuidv4 } from 'uuid'; // uuid 라이브러리 import
 
 dotenv.config();
 
@@ -24,9 +25,9 @@ export default function (io) {
         console.log('Client connected:', socket.id);
 
         // 로그인 이벤트 처리 (클라이언트에서 'login' 이벤트 발생)
-        socket.on('login', async ({ user_id, password }, cb) => { 
+        socket.on('login', async ({ user_id, password }, cb) => {
             console.log('User user_id received:', user_id);
-            console.log('User password received:', password); 
+            console.log('User password received:', password);
 
             if (typeof cb !== 'function') {
                 console.error('Callback is not a function');
@@ -34,8 +35,7 @@ export default function (io) {
             }
 
             try {
-                // userController.checkUser 함수에서 user_id를 사용하도록 수정
-                const user = await userController.checkUser(user_id, password); 
+                const user = await userController.checkUser(user_id, password);
                 if (!user.success) {
                     cb({ ok: false, error: user.message });
                     return;
@@ -59,7 +59,7 @@ export default function (io) {
         socket.on('signup', async ({ user_id, password, nickname }, cb) => {
             console.log('User user_id received:', user_id);
             console.log('User password received:', password);
-            console.log('User nickname received:', nickname); 
+            console.log('User nickname received:', nickname);
 
             if (typeof cb !== 'function') {
                 console.error('Callback is not a function');
@@ -67,8 +67,7 @@ export default function (io) {
             }
 
             try {
-                // userController.saveUser 함수에서 user_id를 사용하도록 수정
-                const newUser = await userController.saveUser(user_id, password, nickname); 
+                const newUser = await userController.saveUser(user_id, password, nickname);
                 if (!newUser.success) {
                     cb({ ok: false, error: newUser.message });
                     return;
@@ -133,8 +132,9 @@ export default function (io) {
         };
         const dateMessage = {
             chat: `📅${new Intl.DateTimeFormat('ko-KR', options).format(today)} >`,
-            user: { id: null, name: 'system' },
+            user: { id: 'system', name: 'system' },
             timestamp: new Date().toISOString(),
+            _id: uuidv4(),
         };
         socket.emit('message', dateMessage);
     };
@@ -142,8 +142,9 @@ export default function (io) {
     const sendJoinMessage = (user) => {
         const joinMessage = {
             chat: `${user.nickname} 님이 방에 들어왔습니다.`,
-            user: { id: null, name: 'system' },
+            user: { id: 'system', name: 'system' },
             timestamp: new Date().toISOString(),
+            _id: uuidv4(),
         };
         io.emit('message', joinMessage);
     };
@@ -151,8 +152,9 @@ export default function (io) {
     const sendWelcomeMessage = (user) => {
         const welcomeMessage = {
             chat: `${user.nickname}님 MBTICHAT에 오신 걸 환영합니다! 👋 궁금한 건 언제든 "!부기"를 불러주세요! 😊`,
-            user: { id: null, name: '부기' },
+            user: { id: '부기', name: '부기' }, 
             timestamp: new Date().toISOString(),
+            _id: uuidv4(), 
         };
         io.emit('message', welcomeMessage);
     };
@@ -168,8 +170,9 @@ export default function (io) {
         const prompt = message.replace('!부기', '').trim() + ' (간단히 대답해 주세요)';
         const userMessage = {
             chat: message,
-            user: { id: user.id, name: user.nickname },
+            user: { id: user._id, name: user.nickname }, 
             timestamp: new Date().toISOString(),
+            _id: uuidv4(), // 고유한 _id 생성
         };
         io.emit('message', userMessage);
 
@@ -192,8 +195,9 @@ export default function (io) {
 
                 const botMessage = {
                     chat: `부기: ${fullTextResponse}`,
-                    user: { id: null, name: '부기' },
+                    user: { id: '부기', name: '부기' },
                     timestamp: new Date().toISOString(),
+                    _id: uuidv4(), // 고유한 _id 생성
                 };
                 io.emit('message', botMessage);
                 cb({ ok: true });
@@ -215,8 +219,9 @@ export default function (io) {
 
             const leaveMessage = {
                 chat: `${user.nickname} 님이 방을 나갔습니다.`,
-                user: { id: null, name: 'system' },
+                user: { id: 'system', name: 'system' }, 
                 timestamp: new Date().toISOString(),
+                _id: uuidv4(), // 고유한 _id 생성
             };
             io.emit('message', leaveMessage);
             cb({ ok: true });
@@ -233,8 +238,9 @@ export default function (io) {
             io.emit('userCount', connectedUsers);
             const disconnectMessage = {
                 chat: `${user.nickname} 님이 연결을 끊었습니다.`,
-                user: { id: null, name: 'system' },
+                user: { id: 'system', name: 'system' },
                 timestamp: new Date().toISOString(),
+                _id: uuidv4(), // 고유한 _id 생성
             };
             io.emit('message', disconnectMessage);
         }
