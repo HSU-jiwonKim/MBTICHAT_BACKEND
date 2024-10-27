@@ -5,6 +5,15 @@ const userController = {};
 
 // 유저 정보를 저장하는 함수
 userController.saveUser = async (user_id, password, nickname) => {
+    // 입력 검증
+    if (!user_id || !password || !nickname) {
+        return { success: false, message: '모든 필드를 입력해야 합니다.' };
+    }
+
+    if (password.length < 8) {
+        return { success: false, message: '비밀번호는 최소 8자 이상이어야 합니다.' };
+    }
+
     try {
         // 이미 있는 유저인지 확인 (user_id와 nickname으로 중복 확인)
         const existingUser = await User.findOne({ user_id });
@@ -21,13 +30,12 @@ userController.saveUser = async (user_id, password, nickname) => {
         // 없다면 새로 유저 정보 만들기
         const user = new User({
             user_id, // 아이디 저장
-            password, // 해시할 비밀번호 저장
             nickname, // 닉네임 저장
             online: true,
         });
 
         // 비밀번호 해시화 호출
-        await user.hashPassword(); // 비밀번호 해시화
+        user.password = await bcrypt.hash(password, 10); // 비밀번호 해시화
         await user.save(); // 유저 정보 저장
         console.log("User saved successfully:", user); // 저장된 유저 정보 로그
 
@@ -48,16 +56,7 @@ userController.checkUser = async (user_id, password) => {
             return { success: false, message: '존재하지 않는 사용자입니다.' }; // 사용자 존재하지 않음
         }
 
-        // 디버깅을 위한 로깅
-        console.log("Found user:", user); // 유저 정보 출력
-        console.log("User password from DB:", user.password); // DB에서 가져온 비밀번호 출력
-
         // 비밀번호 확인 로직 (해시 비교)
-        if (!user.password) {
-            console.error("No password found for user:", user_id); // 비밀번호가 없는 경우 로그
-            return { success: false, message: '비밀번호를 확인할 수 없습니다.' };
-        }
-
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return { success: false, message: '비밀번호가 틀렸습니다.' }; // 비밀번호 틀림
