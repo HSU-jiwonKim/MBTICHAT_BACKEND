@@ -19,14 +19,15 @@ userController.saveUser = async (user_id, password, nickname) => {
         }
 
         // 없다면 새로 유저 정보 만들기
-        const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             user_id, // 아이디 저장
-            password: hashedPassword, // 해시된 비밀번호 저장
+            password, // 해시할 비밀번호 저장
             nickname, // 닉네임 저장
             online: true,
         });
 
+        // 비밀번호 해시화 호출
+        await user.hashPassword(); // 비밀번호 해시화
         await user.save(); // 유저 정보 저장
         console.log("User saved successfully:", user); // 저장된 유저 정보 로그
 
