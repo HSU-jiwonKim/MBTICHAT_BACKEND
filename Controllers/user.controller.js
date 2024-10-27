@@ -1,84 +1,98 @@
-import User from "../Models/user.js"; // User 모델 import
-import bcrypt from 'bcrypt'; // bcrypt 추가
+import User from "../Models/user.js";
+import bcrypt from 'bcrypt';
 
 const userController = {};
 
 // 유저 정보를 저장하는 함수
 userController.saveUser = async (user_id, password, nickname) => {
-    // 입력 검증
-    if (!user_id || !password || !nickname) {
-        return { success: false, message: '모든 필드를 입력해야 합니다.' };
-    }
-
-    // 아이디와 닉네임 형식 검사 (예: 3자 이상)
-    if (user_id.length < 3) {
-        return { success: false, message: '아이디는 최소 3자 이상이어야 합니다.' };
-    }
-
-    if (nickname.length < 3) {
-        return { success: false, message: '닉네임은 최소 3자 이상이어야 합니다.' };
-    }
-
-    if (password.length < 8) {
-        return { success: false, message: '비밀번호는 최소 8자 이상이어야 합니다.' };
-    }
-
-    console.log("Attempting to save user:", { user_id, nickname }); // 입력값 출력
-
     try {
+        console.log("Attempting to save user:", { user_id, nickname });
+
+        // 입력 검증
+        if (!user_id || !password || !nickname) {
+            return { success: false, message: '모든 필드를 입력해야 합니다.' };
+        }
+
+        if (user_id.length < 3) {
+            return { success: false, message: '아이디는 최소 3자 이상이어야 합니다.' };
+        }
+
+        if (nickname.length < 3) {
+            return { success: false, message: '닉네임은 최소 3자 이상이어야 합니다.' };
+        }
+
+        if (password.length < 8) {
+            return { success: false, message: '비밀번호는 최소 8자 이상이어야 합니다.' };
+        }
+
+        // 데이터베이스 연결 확인
+        console.log("Checking database connection..."); 
+        await User.findOne({}).exec(); 
+        console.log("Database connected successfully!");
+
         // 이미 있는 유저인지 확인 (user_id와 nickname으로 중복 확인)
         const existingUser = await User.findOne({ user_id });
         const existingNickname = await User.findOne({ nickname });
 
         if (existingUser) {
-            return { success: false, message: '이미 있는 아이디입니다.' }; // 아이디 중복
-        }
-        
-        if (existingNickname) {
-            return { success: false, message: '이미 있는 닉네임입니다.' }; // 닉네임 중복
+            return { success: false, message: '이미 있는 아이디입니다.' };
         }
 
-        // 없다면 새로 유저 정보 만들기
+        if (existingNickname) {
+            return { success: false, message: '이미 있는 닉네임입니다.' }; 
+        }
+
+        // 새로운 유저 정보 생성
         const user = new User({
-            user_id, // 아이디 저장
-            nickname, // 닉네임 저장
+            user_id,
+            nickname,
             online: true,
+            password: await bcrypt.hash(password, 10), 
         });
 
-        // 비밀번호 해시화 호출
-        user.password = await bcrypt.hash(password, 10); // 비밀번호 해시화
-        await user.save(); // 유저 정보 저장
-        console.log("User saved successfully:", user); // 저장된 유저 정보 로그
+        // 유저 정보 저장
+        await user.save();
+        console.log("User saved successfully:", user);
 
-        return { success: true, user }; // 저장된 유저 반환
+        return { success: true, user };
     } catch (error) {
-        console.error("Error saving user:", error.message); // 구체적인 에러 메시지 출력
-        return { success: false, message: "유저 정보를 저장하는 중 오류 발생" }; // 오류 메시지 추가
+        console.error("Error saving user:", error); 
+
+        if (error.code === 11000) { // MongoDB duplicate key error
+            if (error.keyPattern.user_id) {
+                return { success: false, message: '이미 있는 아이디입니다.' };
+            } else if (error.keyPattern.nickname) {
+                return { success: false, message: '이미 있는 닉네임입니다.' };
+            }
+        } 
+
+        return { success: false, message: "유저 정보를 저장하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." }; 
     }
 };
 
 // 유저를 찾는 함수
 userController.checkUser = async (user_id, password) => {
     try {
-        const user = await User.findOne({ user_id }); // 유저 찾기
+        console.log("Attempting to find user:", user_id); 
 
-        // 유저가 존재하지 않는 경우
+        const user = await User.findOne({ user_id });
+
         if (!user) {
-            return { success: false, message: '존재하지 않는 사용자입니다.' }; // 사용자 존재하지 않음
+            return { success: false, message: '존재하지 않는 사용자입니다.' };
         }
 
-        // 비밀번호 확인 로직 (해시 비교)
         const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
-            return { success: false, message: '비밀번호가 틀렸습니다.' }; // 비밀번호 틀림
+            return { success: false, message: '비밀번호가 틀렸습니다.' };
         }
 
-        console.log("User logged in successfully:", user); // 로그인 성공 로그
-        return { success: true, user }; // 유저 정보 반환
+        console.log("User logged in successfully:", user); 
+        return { success: true, user }; 
     } catch (error) {
-        console.error("Error checking user:", error.message); // 구체적인 에러 메시지 출력
-        return { success: false, message: "유저 정보를 확인하는 중 오류 발생" }; // 오류 메시지 추가
+        console.error("Error checking user:", error);
+        return { success: false, message: "유저 정보를 확인하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." }; 
     }
 };
 
-export default userController; // ESM 방식으로 내보내기
+export default userController;

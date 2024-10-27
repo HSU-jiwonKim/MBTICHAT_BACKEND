@@ -1,35 +1,55 @@
-import mongoose from "mongoose"; // Mongoose 라이브러리 가져오기
-import bcrypt from "bcrypt"; // bcrypt 라이브러리 가져오기
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
-// 사용자 스키마 정의하기
 const userSchema = new mongoose.Schema({
-    user_id: { // 유저의 아이디를 저장하는 필드
-        type: String, // 데이터 타입: 문자열
-        required: [true, "User ID must be provided"], // 필수 입력 사항이며, 오류 메시지 설정
-        unique: true, // 유일한 값이어야 함
+    user_id: {
+        type: String,
+        required: [true, "User ID must be provided"],
+        unique: true,
+        // validate: { 
+        //     validator: function(v) {
+        //         // user_id 형식 검증 로직 (예: 3~15자의 영문 소문자, 숫자 조합)
+        //         return /^[a-z0-9]{3,15}$/.test(v);
+        //     },
+        //     message: props => `${props.value} is not a valid user ID!`
+        // }, 
     },
-    password: { // 유저의 비밀번호를 저장하는 필드
-        type: String, // 데이터 타입: 문자열
-        required: [true, "Password is required"], // 필수 입력 사항
+    password: {
+        type: String,
+        required: [true, "Password is required"],
+        // validate: {
+        //     validator: function(v) {
+        //         // 비밀번호 형식 검증 로직 (예: 8자 이상, 특수문자 포함 등)
+        //         return /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(v);
+        //     },
+        //     message: "Password must be at least 8 characters long and include at least one letter, one number and one special character."
+        // }
     },
-    nickname: { // 유저의 닉네임을 저장하는 필드
-        type: String, // 데이터 타입: 문자열
-        required: [true, "Nickname is required"], // 필수 입력 사항
+    nickname: {
+        type: String,
+        required: [true, "Nickname is required"],
+        unique: true, // 닉네임 중복 방지
+        // validate: {
+        //     validator: function(v) {
+        //         // 닉네임 형식 검증 로직
+        //         return /^[a-zA-Z0-9가-힣]{2,10}$/.test(v); 
+        //     },
+        //     message: props => `${props.value} is not a valid nickname!`
+        // },
     },
-    token: { // 유저의 연결 정보(id)를 저장하는 필드
-        type: String, // 데이터 타입: 문자열
+    token: {
+        type: String,
     },
-    online: { // 유저의 온라인 상태를 나타내는 필드
-        type: Boolean, // 데이터 타입: 불리언
-        default: false, // 기본값: false (오프라인)
+    online: {
+        type: Boolean,
+        default: false,
     },
-});
+}, { timestamps: true, versionKey: false });
 
-// 비밀번호를 해시하는 메서드
 userSchema.methods.hashPassword = async function () {
     this.password = await bcrypt.hash(this.password, 10);
 };
 
-// Mongoose 모델 생성 및 내보내기
 const User = mongoose.model("User", userSchema);
+
 export default User;
