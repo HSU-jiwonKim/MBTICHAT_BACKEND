@@ -30,7 +30,7 @@ export default function (io) {
 
     console.log('client is connected', socket.id);
 
-    socket.on('login', async (userName, cb) => {
+    socket.on('login', async ({ userName, password }, cb) => {
       console.log('User name received:', userName);
       if (typeof cb !== 'function') {
         console.error('Callback is not a function');
@@ -43,7 +43,8 @@ export default function (io) {
           return;
         }
 
-        const user = await userController.saveUser(userName, socket.id);
+        // 사용자 저장
+        const user = await userController.saveUser(userName, password, socket.id);
         users[socket.id] = user;
         connectedUsers++;
         io.emit('userCount', connectedUsers);
@@ -197,9 +198,10 @@ export default function (io) {
       }
       console.log('client disconnected', socket.id);
     });
-  });
 
-  io.on('error', (error) => {
-    console.error('Server error:', error);
+    // 서버 오류 처리
+    io.on('error', (error) => {
+      console.error('Server error:', error);
+    });
   });
 }

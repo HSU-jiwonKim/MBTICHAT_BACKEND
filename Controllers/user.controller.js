@@ -3,7 +3,7 @@ import User from "../Models/user.js"; // User 모델 import
 const userController = {};
 
 // 유저 정보를 저장하는 함수
-userController.saveUser = async (userName, sid) => {
+userController.saveUser = async (userName, password, sid) => {
     try {
         // 이미 있는 유저인지 확인
         let user = await User.findOne({ name: userName });
@@ -12,6 +12,7 @@ userController.saveUser = async (userName, sid) => {
         if (!user) {
             user = new User({
                 name: userName,
+                password: password, // 비밀번호 추가
                 token: sid,
                 online: true,
             });
