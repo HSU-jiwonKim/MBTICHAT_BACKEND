@@ -7,8 +7,8 @@ const userController = {};
 userController.saveUser = async (user_id, password, nickname) => {
     try {
         // 이미 있는 유저인지 확인 (user_id와 nickname으로 중복 확인)
-        let existingUser = await User.findOne({ user_id });
-        let existingNickname = await User.findOne({ nickname });
+        const existingUser = await User.findOne({ user_id });
+        const existingNickname = await User.findOne({ nickname });
 
         if (existingUser) {
             return { success: false, message: '이미 있는 아이디입니다.' }; // 아이디 중복
@@ -32,7 +32,7 @@ userController.saveUser = async (user_id, password, nickname) => {
         return { success: true, user }; // 저장된 유저 반환
     } catch (error) {
         console.error("Error saving user:", error);
-        throw new Error("Error saving user");
+        return { success: false, message: "유저 정보를 저장하는 중 오류 발생" }; // 오류 메시지 추가
     }
 };
 
@@ -54,7 +54,7 @@ userController.checkUser = async (user_id, password) => {
         return { success: true, user }; // 유저 정보 반환
     } catch (error) {
         console.error("Error checking user:", error);
-        throw new Error("Error checking user");
+        return { success: false, message: "유저 정보를 확인하는 중 오류 발생" }; // 오류 메시지 추가
     }
 };
 
@@ -63,17 +63,17 @@ userController.updateProfileImage = async (userId, imageUrl) => {
     try {
         const user = await User.findById(userId);
         if (!user) {
-            throw new Error("User not found");
+            return { success: false, message: "사용자를 찾을 수 없습니다." }; // 사용자 찾지 못했을 때
         }
 
         user.profileImage = imageUrl; // 프로필 이미지 URL 업데이트
         await user.save(); // 유저 정보 저장
 
-        return user; // 업데이트된 유저 정보 반환
+        return { success: true, user }; // 업데이트된 유저 정보 반환
     } catch (error) {
         console.error("Error updating profile image:", error);
-        throw new Error("Error updating profile image");
+        return { success: false, message: "프로필 이미지를 업데이트하는 중 오류 발생" }; // 오류 메시지 추가
     }
 };
 
-export default userController; // ESM 방식으로 내보내기
+export default userController; // ESM 방식으로 내보내기 
