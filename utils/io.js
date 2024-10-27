@@ -158,7 +158,7 @@ export default function (io) {
     };
 
     const handleBotMessage = async (message, user, cb) => {
-        const now = Date().now();
+        const now = Date.now();
         if (now - lastGPTCallTime < GPT_COOLDOWN) {
             cb({ ok: false, error: '너무 많은 요청입니다. 몇 초 후에 다시 시도해주세요.' });
             return;
