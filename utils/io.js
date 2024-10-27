@@ -23,9 +23,10 @@ export default function (io) {
     io.on('connection', async (socket) => {
         console.log('Client connected:', socket.id);
 
-        socket.on('login', async ({ nickname, password }, cb) => {
-            console.log('User nickname received:', nickname);
-            console.log('User password received:', password); // 비밀번호 로깅
+        // 로그인 이벤트 처리 (클라이언트에서 'login' 이벤트 발생)
+        socket.on('login', async ({ user_id, password }, cb) => { 
+            console.log('User user_id received:', user_id);
+            console.log('User password received:', password); 
 
             if (typeof cb !== 'function') {
                 console.error('Callback is not a function');
@@ -33,7 +34,8 @@ export default function (io) {
             }
 
             try {
-                const user = await userController.checkUser(nickname, password);
+                // userController.checkUser 함수에서 user_id를 사용하도록 수정
+                const user = await userController.checkUser(user_id, password); 
                 if (!user.success) {
                     cb({ ok: false, error: user.message });
                     return;
@@ -50,6 +52,31 @@ export default function (io) {
                 cb({ ok: true, data: user.user });
             } catch (error) {
                 cb({ ok: false, error: '로그인 중 오류 발생: ' + error.message });
+            }
+        });
+
+        // 회원가입 이벤트 처리 (클라이언트에서 'signup' 이벤트 발생)
+        socket.on('signup', async ({ user_id, password, nickname }, cb) => {
+            console.log('User user_id received:', user_id);
+            console.log('User password received:', password);
+            console.log('User nickname received:', nickname); 
+
+            if (typeof cb !== 'function') {
+                console.error('Callback is not a function');
+                return;
+            }
+
+            try {
+                // userController.saveUser 함수에서 user_id를 사용하도록 수정
+                const newUser = await userController.saveUser(user_id, password, nickname); 
+                if (!newUser.success) {
+                    cb({ ok: false, error: newUser.message });
+                    return;
+                }
+
+                cb({ ok: true, data: newUser.user });
+            } catch (error) {
+                cb({ ok: false, error: '회원가입 중 오류 발생: ' + error.message });
             }
         });
 
@@ -133,7 +160,7 @@ export default function (io) {
     };
 
     const handleBotMessage = async (message, user, cb) => {
-        const now = Date.now();
+        const now = Date().now();
         if (now - lastGPTCallTime < GPT_COOLDOWN) {
             cb({ ok: false, error: '너무 많은 요청입니다. 몇 초 후에 다시 시도해주세요.' });
             return;
