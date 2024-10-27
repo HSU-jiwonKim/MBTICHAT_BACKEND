@@ -60,4 +60,4 @@ router.post('/login', async (req, res) => {
     }
 });
 
-export default router; // 라우터 내보내기
+export default router; // 라우터 내보내
