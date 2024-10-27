@@ -150,9 +150,7 @@ export default function (io) {
 
     const sendWelcomeMessage = (user) => {
         const welcomeMessage = {
-            chat: `안녕하세요! MBTICHAT에 오신 것을 환영합니다, ${user.nickname}님!  
-                    저를 호출하시려면 !부기 <원하는 말> 을 입력해 주세요.  
-                    궁금한 점이 있으시면 언제든지 말씀해 주세요! 😊`,
+            chat: `${user.nickname}님 MBTICHAT에 오신 걸 환영합니다! 👋 궁금한 건 언제든 "!부기"를 불러주세요! 😊`,
             user: { id: null, name: '부기' },
             timestamp: new Date().toISOString(),
         };
