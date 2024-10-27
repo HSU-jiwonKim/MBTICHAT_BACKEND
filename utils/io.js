@@ -6,7 +6,6 @@ import userController from '../Controllers/user.controller.js';
 
 dotenv.config();
 
-// Vertex AI API 초기화
 const clientOptions = {
   project: process.env.GOOGLE_PROJECT_ID,
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
@@ -14,7 +13,6 @@ const clientOptions = {
 
 const vertexAI = new VertexAI(clientOptions);
 
-// API 호출 쿨다운 설정
 let lastGPTCallTime = 0;
 const GPT_COOLDOWN = 5000;
 
@@ -23,11 +21,6 @@ export default function (io) {
   const users = {};
 
   io.on('connection', async (socket) => {
-    if (users[socket.id]) {
-      console.log('기존 사용자 재연결:', socket.id);
-      return;
-    }
-
     console.log('client is connected', socket.id);
 
     socket.on('login', async ({ userName, password }, cb) => {
@@ -37,14 +30,12 @@ export default function (io) {
         return;
       }
       try {
-        const existingUser = Object.values(users).find(user => user.name === userName);
-        if (existingUser) {
-          cb({ ok: false, error: '이미 사용 중인 닉네임입니다.' });
+        const user = await userController.checkUser(userName, password);
+        if (!user) {
+          cb({ ok: false, error: '존재하지 않는 사용자이거나 비밀번호가 잘못되었습니다.' });
           return;
         }
 
-        // 사용자 저장
-        const user = await userController.saveUser(userName, password, socket.id);
         users[socket.id] = user;
         connectedUsers++;
         io.emit('userCount', connectedUsers);
@@ -66,7 +57,6 @@ export default function (io) {
         };
         socket.emit('message', dateMessage);
 
-        // 방에 들어왔다는 메시지 추가
         const joinMessage = {
           chat: `${user.name} 님이 방에 들어왔습니다.`,
           user: { id: null, name: 'system' },
@@ -199,7 +189,6 @@ export default function (io) {
       console.log('client disconnected', socket.id);
     });
 
-    // 서버 오류 처리
     io.on('error', (error) => {
       console.error('Server error:', error);
     });
