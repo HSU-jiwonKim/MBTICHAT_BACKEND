@@ -3,20 +3,20 @@ import User from '../Models/user.js'; // User 모델 import
 import bcrypt from 'bcrypt'; // 비밀번호 해싱을 위한 bcrypt
 import jwt from 'jsonwebtoken'; // JWT 생성을 위한 jsonwebtoken
 
-const router = express.Router(); //라우터
+const router = express.Router(); // 라우터
 
 // 회원가입
 router.post('/signup', async (req, res) => {
-    const { name, password } = req.body;
+    const { user_id, password, nickname } = req.body; // user_id 추가
 
     // 유효성 검사
-    if (!name || !password || password.length < 6) {
-        return res.status(400).json({ ok: false, error: 'Name and password are required. Password must be at least 6 characters.' });
+    if (!user_id || !password || password.length < 6 || !nickname) {
+        return res.status(400).json({ ok: false, error: 'User ID, password, and nickname are required. Password must be at least 6 characters.' });
     }
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ name, password: hashedPassword });
+        const newUser = new User({ user_id, password: hashedPassword, nickname }); // user_id 저장
         await newUser.save();
         res.status(201).json({ ok: true, message: 'User created successfully.' });
     } catch (error) {
@@ -27,15 +27,15 @@ router.post('/signup', async (req, res) => {
 
 // 로그인
 router.post('/login', async (req, res) => {
-    const { name, password } = req.body;
+    const { user_id, password } = req.body; // user_id로 수정
 
     // 유효성 검사
-    if (!name || !password) {
-        return res.status(400).json({ ok: false, error: 'Name and password are required.' });
+    if (!user_id || !password) {
+        return res.status(400).json({ ok: false, error: 'User ID and password are required.' });
     }
 
     try {
-        const user = await User.findOne({ name });
+        const user = await User.findOne({ user_id }); // user_id로 검색
         if (!user) return res.status(404).json({ ok: false, error: 'User not found.' });
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -53,4 +53,4 @@ router.post('/login', async (req, res) => {
     }
 });
 
-export default router;
+export default router; // 라우터 내보내기

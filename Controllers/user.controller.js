@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt'; // bcrypt 추가
 const userController = {};
 
 // 유저 정보를 저장하는 함수
-userController.saveUser = async (userName, password, sid) => {
+userController.saveUser = async (userName, password, sid, nickname) => {
     try {
         // 이미 있는 유저인지 확인
         let user = await User.findOne({ name: userName });
@@ -18,6 +18,7 @@ userController.saveUser = async (userName, password, sid) => {
                 password: hashedPassword, // 해시된 비밀번호 저장
                 token: sid,
                 online: true,
+                nickname: nickname, // 닉네임 저장
             });
         } else {
             // 이미 있는 유저라면 연결 정보(token 값)만 업데이트

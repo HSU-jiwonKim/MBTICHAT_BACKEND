@@ -23,14 +23,14 @@ export default function (io) {
   io.on('connection', async (socket) => {
     console.log('client is connected', socket.id);
 
-    socket.on('login', async ({ userName, password }, cb) => {
-      console.log('User name received:', userName);
+    socket.on('login', async ({ nickname, password }, cb) => { // userName을 nickname으로 변경
+      console.log('User nickname received:', nickname);
       if (typeof cb !== 'function') {
         console.error('Callback is not a function');
         return;
       }
       try {
-        const user = await userController.checkUser(userName, password);
+        const user = await userController.checkUser(nickname, password); // userName을 nickname으로 변경
         if (!user) {
           cb({ ok: false, error: '존재하지 않는 사용자이거나 비밀번호가 잘못되었습니다.' });
           return;
@@ -58,14 +58,14 @@ export default function (io) {
         socket.emit('message', dateMessage);
 
         const joinMessage = {
-          chat: `${user.name} 님이 방에 들어왔습니다.`,
+          chat: `${user.nickname} 님이 방에 들어왔습니다.`, // name을 nickname으로 변경
           user: { id: null, name: 'system' },
           timestamp: new Date().toISOString(),
         };
         io.emit('message', joinMessage);
 
         const welcomeMessage = {
-          chat: `안녕하세요! MBTICHAT에 오신 것을 환영합니다, ${user.name}님!  
+          chat: `안녕하세요! MBTICHAT에 오신 것을 환영합니다, ${user.nickname}님!  
           저를 호출하시려면 !부기 <원하는 말> 을 입력해 주세요.  
           궁금한 점이 있으시면 언제든지 말씀해 주세요! 😊`,          
           user: { id: null, name: '부기' },
@@ -100,7 +100,7 @@ export default function (io) {
 
           const userMessage = {
             chat: message,
-            user: { id: user.id, name: user.name },
+            user: { id: user.id, name: user.nickname }, // name을 nickname으로 변경
             timestamp: new Date().toISOString(),
           };
           io.emit('message', userMessage);
@@ -153,8 +153,8 @@ export default function (io) {
       }
     });
 
-    socket.on('userLeave', async (userName, cb) => {
-      console.log('User leaving:', userName);
+    socket.on('userLeave', async (nickname, cb) => { // userName을 nickname으로 변경
+      console.log('User leaving:', nickname);
       if (typeof cb !== 'function') {
         console.error('Callback is not a function');
         return;
@@ -162,7 +162,7 @@ export default function (io) {
       if (users[socket.id]) {
         connectedUsers--;
         const leaveMessage = {
-          chat: `${userName} 님이 나갔습니다.`,
+          chat: `${nickname} 님이 나갔습니다.`, // name을 nickname으로 변경
           user: { id: null, name: 'system' },
           timestamp: new Date().toISOString(),
         };
@@ -178,7 +178,7 @@ export default function (io) {
       if (user) {
         connectedUsers--;
         const leaveMessage = {
-          chat: `${user.name} 님이 나갔습니다.`,
+          chat: `${user.nickname} 님이 나갔습니다.`, // name을 nickname으로 변경
           user: { id: null, name: 'system' },
           timestamp: new Date().toISOString(),
         };
