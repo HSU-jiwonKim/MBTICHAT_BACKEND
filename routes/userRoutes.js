@@ -3,7 +3,7 @@ import User from '../Models/user.js'; // User 모델 import
 import bcrypt from 'bcrypt'; // 비밀번호 해싱을 위한 bcrypt
 import jwt from 'jsonwebtoken'; // JWT 생성을 위한 jsonwebtoken
 
-const router = express.Router();
+const router = express.Router(); //라우터
 
 // 회원가입
 router.post('/signup', async (req, res) => {
