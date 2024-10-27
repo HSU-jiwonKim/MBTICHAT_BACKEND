@@ -1,4 +1,4 @@
-import User from "../Models/user.js"; // require 대신 import 사용
+import User from "../Models/user.js"; // User 모델 import
 
 const userController = {};
 
@@ -15,15 +15,15 @@ userController.saveUser = async (userName, sid) => {
                 token: sid,
                 online: true,
             });
+        } else {
+            // 이미 있는 유저라면 연결 정보(token 값)만 업데이트
+            user.token = sid;
+            user.online = true;
         }
-
-        // 이미 있는 유저라면 연결 정보(token 값)만 업데이트
-        user.token = sid;
-        user.online = true;
 
         await user.save(); // 유저 정보 저장
 
-        return user;
+        return user; // 저장된 유저 반환
     } catch (error) {
         console.error("Error saving user:", error);
         throw new Error("Error saving user");
@@ -31,15 +31,20 @@ userController.saveUser = async (userName, sid) => {
 };
 
 // 유저를 찾는 함수
-userController.checkUser = async (sid) => {
+userController.checkUser = async (userName, password) => {
     try {
-        const user = await User.findOne({ token: sid }); // token이 sid인 유저 찾기
+        const user = await User.findOne({ name: userName }); // 유저 찾기
 
         if (!user) {
             return null; // 유저를 찾지 못하면 null 반환
         }
 
-        return user;
+        // 비밀번호 확인 로직 (비밀번호 해시 비교 등 추가 필요)
+        if (user.password !== password) {
+            return null; // 비밀번호가 틀린 경우 null 반환
+        }
+
+        return user; // 유저 정보 반환
     } catch (error) {
         console.error("Error checking user:", error);
         throw new Error("Error checking user");
