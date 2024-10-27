@@ -1,4 +1,5 @@
 import mongoose from "mongoose"; // Mongoose 라이브러리 가져오기
+import bcrypt from "bcrypt"; // bcrypt 라이브러리 가져오기
 
 // 사용자 스키마 정의하기
 const userSchema = new mongoose.Schema({
@@ -24,5 +25,11 @@ const userSchema = new mongoose.Schema({
     },
 });
 
+// 비밀번호를 해시하는 메서드
+userSchema.methods.hashPassword = async function () {
+    this.password = await bcrypt.hash(this.password, 10);
+};
+
 // Mongoose 모델 생성 및 내보내기
-export default mongoose.model("User", userSchema); // ESM 방식으로 내보내기
+const User = mongoose.model("User", userSchema);
+export default User;
