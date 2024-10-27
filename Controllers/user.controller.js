@@ -10,6 +10,15 @@ userController.saveUser = async (user_id, password, nickname) => {
         return { success: false, message: '모든 필드를 입력해야 합니다.' };
     }
 
+    // 아이디와 닉네임 형식 검사 (예: 3자 이상)
+    if (user_id.length < 3) {
+        return { success: false, message: '아이디는 최소 3자 이상이어야 합니다.' };
+    }
+
+    if (nickname.length < 3) {
+        return { success: false, message: '닉네임은 최소 3자 이상이어야 합니다.' };
+    }
+
     if (password.length < 8) {
         return { success: false, message: '비밀번호는 최소 8자 이상이어야 합니다.' };
     }
@@ -62,6 +71,7 @@ userController.checkUser = async (user_id, password) => {
             return { success: false, message: '비밀번호가 틀렸습니다.' }; // 비밀번호 틀림
         }
 
+        console.log("User logged in successfully:", user); // 로그인 성공 로그
         return { success: true, user }; // 유저 정보 반환
     } catch (error) {
         console.error("Error checking user:", error);
