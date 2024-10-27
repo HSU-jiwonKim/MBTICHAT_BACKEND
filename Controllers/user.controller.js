@@ -28,6 +28,7 @@ userController.saveUser = async (user_id, password, nickname) => {
         });
 
         await user.save(); // 유저 정보 저장
+        console.log("User saved successfully:", user); // 저장된 유저 정보 로그
 
         return { success: true, user }; // 저장된 유저 반환
     } catch (error) {
@@ -51,6 +52,11 @@ userController.checkUser = async (user_id, password) => {
         console.log("User password from DB:", user.password); // DB에서 가져온 비밀번호 출력
 
         // 비밀번호 확인 로직 (해시 비교)
+        if (!user.password) {
+            console.error("No password found for user:", user_id); // 비밀번호가 없는 경우 로그
+            return { success: false, message: '비밀번호를 확인할 수 없습니다.' };
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return { success: false, message: '비밀번호가 틀렸습니다.' }; // 비밀번호 틀림
@@ -63,4 +69,4 @@ userController.checkUser = async (user_id, password) => {
     }
 };
 
-export default userController; // ESM 방식으로 내보내기 
+export default userController; // ESM 방식으로 내보내기
