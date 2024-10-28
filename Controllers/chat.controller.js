@@ -7,7 +7,7 @@ chatController.saveChat = async (message, user) => {
         chat: message,
         user: {
             id: user._id,
-            name: user.nickname, // user.name 대신 user.nickname 사용
+            name: user.nickname, // user.name 대신 user.nickname 사
         },
         timestamp: new Date(), 
     });
