@@ -1,30 +1,35 @@
+// 필요한 모듈을 불러옵니다.
 import { Server } from 'socket.io';
 import { VertexAI } from '@google-cloud/vertexai';
 import dotenv from 'dotenv';
 import chatController from '../Controllers/chat.controller.js';
 import userController from '../Controllers/user.controller.js';
-import { v4 as uuidv4 } from 'uuid'; // uuid 라이브러리 import
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 
+// Vertex AI 클라이언트 옵션을 설정합니다.
 const clientOptions = {
     project: process.env.GOOGLE_PROJECT_ID,
     keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
 
+// Vertex AI 인스턴스 생성
 const vertexAI = new VertexAI(clientOptions);
 
 let lastGPTCallTime = 0;
-const GPT_COOLDOWN = 5000;
+const GPT_COOLDOWN = 5000; // GPT 호출 간격 제한 (5초)
 
+// Socket.IO 서버와 클라이언트 간 실시간 통신을 설정하는 메인 함수
 export default function (io) {
     let connectedUsers = 0;
-    const users = {};
+    const users = {}; // 소켓별 사용자 정보 저장
+    const userSessions = {}; // 사용자 ID별로 현재 연결된 소켓을 저장
 
     io.on('connection', async (socket) => {
         console.log('Client connected:', socket.id);
 
-        let isLoggingIn = false; // 로그인 중인지 여부를 나타내는 플래그 추가
+        let isLoggingIn = false;
 
         // 로그인 이벤트 처리
         socket.on('login', async ({ user_id, password }, cb) => {
@@ -33,24 +38,25 @@ export default function (io) {
                 return;
             }
 
-            isLoggingIn = true; // 로그인 시도 시작
-            console.log('User user_id received:', user_id);
-            console.log('User password received:', password);
-
-            if (typeof cb !== 'function') {
-                console.error('Callback is not a function');
-                isLoggingIn = false;
-                return;
-            }
+            isLoggingIn = true;
 
             try {
                 const user = await userController.checkUser(user_id, password);
                 if (!user.success) {
                     cb({ ok: false, error: user.message });
-                    isLoggingIn = false; // 로그인 실패 시 플래그 초기화
+                    isLoggingIn = false;
                     return;
                 }
 
+                // 동일 사용자 ID의 이전 세션이 있을 경우 해당 세션을 종료
+                if (userSessions[user_id]) {
+                    const previousSocket = userSessions[user_id];
+                    previousSocket.emit('message', { chat: '다른 곳에서 로그인되어 연결이 끊어졌습니다.' });
+                    previousSocket.disconnect();
+                }
+
+                // 새 세션 저장 및 사용자 정보 저장
+                userSessions[user_id] = socket;
                 users[socket.id] = user.user;
                 connectedUsers++;
                 io.emit('userCount', connectedUsers);
@@ -63,41 +69,26 @@ export default function (io) {
             } catch (error) {
                 cb({ ok: false, error: '로그인 중 오류 발생: ' + error.message });
             } finally {
-                isLoggingIn = false; // 로그인 요청 완료 후 플래그 초기화
+                isLoggingIn = false;
             }
         });
 
         // 회원가입 이벤트 처리
         socket.on('signup', async ({ user_id, password, nickname }, cb) => {
-            console.log('User user_id received:', user_id);
-            console.log('User password received:', password);
-            console.log('User nickname received:', nickname);
-
-            if (typeof cb !== 'function') {
-                console.error('Callback is not a function');
-                return;
-            }
-
             try {
                 const newUser = await userController.saveUser(user_id, password, nickname);
                 if (!newUser.success) {
                     cb({ ok: false, error: newUser.message });
                     return;
                 }
-
                 cb({ ok: true, data: newUser.user });
             } catch (error) {
                 cb({ ok: false, error: '회원가입 중 오류 발생: ' + error.message });
             }
         });
 
+        // 메시지 전송 이벤트 처리
         socket.on('sendMessage', async (message, cb) => {
-            console.log('Message to send:', message);
-            if (typeof cb !== 'function') {
-                console.error('Callback is not a function');
-                return;
-            }
-
             try {
                 const user = users[socket.id];
                 if (!user) {
@@ -115,24 +106,27 @@ export default function (io) {
                 io.emit('message', newMessage);
                 cb({ ok: true });
             } catch (error) {
-                console.error('Error sending message:', error);
                 cb({ ok: false, error: '메시지 전송 실패: ' + error.message });
             }
         });
 
+        // 사용자 퇴장 이벤트 처리
         socket.on('userLeave', (cb) => {
             handleUserLeave(socket, cb);
         });
 
+        // 클라이언트 연결 해제 이벤트 처리
         socket.on('disconnect', () => {
             handleUserDisconnect(socket);
         });
 
+        // 서버 오류 처리
         io.on('error', (error) => {
             console.error('Server error:', error);
         });
     });
 
+    // 날짜 메시지 전송 함수
     const sendDateMessage = (socket) => {
         const today = new Date();
         const options = {
@@ -151,6 +145,7 @@ export default function (io) {
         socket.emit('message', dateMessage);
     };
 
+    // 새 사용자 입장 메시지 전송
     const sendJoinMessage = (user) => {
         const joinMessage = {
             chat: `${user.nickname} 님이 방에 들어왔습니다.`,
@@ -161,6 +156,7 @@ export default function (io) {
         io.emit('message', joinMessage);
     };
 
+    // 환영 메시지 전송
     const sendWelcomeMessage = (user) => {
         const welcomeMessage = {
             chat: `${user.nickname}님 MBTICHAT에 오신 걸 환영합니다! 👋 궁금한 건 언제든 "!부기"를 불러주세요! 😊`,
@@ -171,6 +167,7 @@ export default function (io) {
         io.emit('message', welcomeMessage);
     };
 
+    // 봇 메시지 처리 함수
     const handleBotMessage = async (message, user, cb) => {
         const now = Date.now();
         if (now - lastGPTCallTime < GPT_COOLDOWN) {
@@ -199,8 +196,6 @@ export default function (io) {
             };
 
             const response = await generativeModel.generateContent(request);
-            console.log('Gemini API response:', response);
-
             if (response?.response?.candidates && response.response.candidates.length > 0) {
                 let fullTextResponse = response.response.candidates[0].content.parts[0].text;
                 fullTextResponse = fullTextResponse.length > 100 ? fullTextResponse.substring(0, 100) + '...' : fullTextResponse;
@@ -217,15 +212,16 @@ export default function (io) {
                 cb({ ok: false, error: '유효한 응답을 받지 못했습니다.' });
             }
         } catch (error) {
-            console.error('Gemini API call error:', error);
             cb({ ok: false, error: 'Gemini API 호출 오류: ' + error.message });
         }
     };
 
+    // 사용자 퇴장 처리 함수
     const handleUserLeave = (socket, cb) => {
         const user = users[socket.id];
         if (user) {
             delete users[socket.id];
+            delete userSessions[user.user_id];
             connectedUsers--;
             io.emit('userCount', connectedUsers);
 
@@ -242,10 +238,12 @@ export default function (io) {
         }
     };
 
+    // 사용자 연결 끊김 처리 함수
     const handleUserDisconnect = (socket) => {
         const user = users[socket.id];
         if (user) {
             delete users[socket.id];
+            delete userSessions[user.user_id];
             connectedUsers--;
             io.emit('userCount', connectedUsers);
             const disconnectMessage = {
