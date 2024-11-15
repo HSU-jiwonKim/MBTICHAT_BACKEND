@@ -48,7 +48,7 @@ export default function (io) {
                     return;
                 }
 
-                // 동일 사용자 ID의 이전 세션이 있을 경우 해당 세션을 종료
+                // 동일 사용자 ID의 이전 세션이 있을 경우 해당 세션을 종
                 if (userSessions[user_id]) {
                     const previousSocket = userSessions[user_id];
                     previousSocket.emit('message', { chat: '다른 곳에서 로그인되어 연결이 끊어졌습니다.' });
